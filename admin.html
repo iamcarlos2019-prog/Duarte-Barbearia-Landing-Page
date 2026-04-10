@@ -899,41 +899,41 @@
             }
 
             return `
-                <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl overflow-hidden group hover:border-primary/40 transition-all shadow-lg flex flex-col">
-                    <div class="aspect-square bg-black flex items-center justify-center relative">
-                        <img src="${p.image || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all duration-700">
-                        <div class="absolute top-3 left-3">
-                            <span class="px-3 py-1 rounded-full border border-current text-[0.55rem] uppercase font-bold tracking-widest ${stockBg} ${stockColor}">${stockLabel}: ${stock}</span>
+                <div class="bg-surface-container-low border border-outline-variant/10 rounded-[2rem] overflow-hidden group hover:border-primary/40 transition-all duration-500 shadow-xl flex flex-col relative">
+                    <div class="aspect-square bg-[#080808] flex items-center justify-center relative overflow-hidden border-b border-white/5">
+                        <img src="${p.image || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000">
+                        <div class="absolute top-4 left-4">
+                            <span class="px-4 py-1.5 rounded-full border border-current text-[0.6rem] font-black uppercase tracking-widest ${stockBg} ${stockColor} backdrop-blur-md">${stockLabel}: ${stock}</span>
                         </div>
-                        <div class="absolute top-3 right-3 flex gap-2">
-                            <button onclick="openProductModal(${p.id})" class="h-8 w-8 bg-black/60 backdrop-blur-md text-white hover:text-primary rounded-lg flex items-center justify-center transition-all shadow-lg"><span class="material-symbols-outlined text-[1rem]">edit</span></button>
-                            <button onclick="deleteProduct(${p.id})" class="h-8 w-8 bg-black/60 backdrop-blur-md text-white hover:text-red-500 rounded-lg flex items-center justify-center transition-all shadow-lg"><span class="material-symbols-outlined text-[1rem]">delete</span></button>
+                        <div class="absolute top-4 right-4 flex gap-2">
+                            <button onclick="openProductModal(${p.id})" class="h-10 w-10 bg-black/60 backdrop-blur-md text-white hover:text-primary rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/10"><span class="material-symbols-outlined text-[1.2rem]">edit</span></button>
+                            <button onclick="deleteProduct(${p.id})" class="h-10 w-10 bg-black/60 backdrop-blur-md text-white hover:text-red-500 rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/10"><span class="material-symbols-outlined text-[1.2rem]">delete</span></button>
                         </div>
                     </div>
-                    <div class="p-5 flex-1 flex flex-col">
+                    <div class="p-6 flex-1 flex flex-col bg-[#0D0D0D]">
                         <div class="mb-4">
-                            <h4 class="font-headline text-lg font-bold text-on-surface mb-1">${p.name}</h4>
-                            <p class="text-[0.65rem] text-on-surface-variant line-clamp-2 h-8">${p.description}</p>
+                            <h4 class="font-headline text-xl font-bold text-white mb-2">${p.name}</h4>
+                            <p class="text-xs text-white/60 line-clamp-2 h-8 leading-relaxed">${p.description}</p>
                         </div>
                         
-                        <div class="mt-auto">
-                            <div class="flex justify-between items-end mb-4">
+                        <div class="mt-auto pt-6 border-t border-white/5">
+                            <div class="flex justify-between items-center mb-6">
                                 <div>
-                                    <div class="text-[0.55rem] uppercase font-bold tracking-widest text-on-surface-variant mb-1">Vendidos</div>
-                                    <div class="text-lg font-headline font-bold text-on-surface">${sold} unidades</div>
+                                    <div class="text-[0.6rem] uppercase font-black tracking-widest text-white/30 mb-1">Vendidos</div>
+                                    <div class="text-lg font-headline font-bold text-white">${sold} UN</div>
                                 </div>
                                 <div class="text-right">
-                                    <div class="text-[0.55rem] uppercase font-bold tracking-widest text-on-surface-variant mb-1">Preço</div>
-                                    <div class="text-xl font-headline font-bold text-primary">R$ ${p.price}</div>
+                                    <div class="text-[0.6rem] uppercase font-black tracking-widest text-white/30 mb-1">Preço</div>
+                                    <div class="text-2xl font-headline font-black text-primary">R$ ${p.price}</div>
                                 </div>
                             </div>
                             
                             <button onclick="registerSale(${p.id})" 
                                 ${stock <= 0 ? 'disabled' : ''}
-                                class="w-full py-3 rounded-xl font-label font-bold uppercase text-[0.6rem] tracking-widest transition-all flex items-center justify-center gap-2 
-                                ${stock <= 0 ? 'bg-outline-variant/20 text-on-surface-variant cursor-not-allowed' : 'bg-primary text-on-primary hover:bg-primary-container shadow-lg shadow-primary/10 active:scale-95'}">
-                                <span class="material-symbols-outlined text-[1rem]">shopping_cart_checkout</span>
-                                ${stock <= 0 ? 'Sem estoque' : 'Registrar Venda'}
+                                class="w-full py-4 rounded-2xl font-label font-black uppercase text-[0.7rem] tracking-[0.2rem] transition-all flex items-center justify-center gap-3 
+                                ${stock <= 0 ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'bg-primary text-black hover:bg-primary/90 shadow-xl shadow-primary/10 active:scale-95'}">
+                                <span class="material-symbols-outlined text-[1.2rem] font-black">add_shopping_cart</span>
+                                ${stock <= 0 ? 'Esgotado' : 'Registrar Venda'}
                             </button>
                         </div>
                     </div>
