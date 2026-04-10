@@ -1,0 +1,540 @@
+<!DOCTYPE html>
+<html class="dark" lang="pt-BR">
+<head>
+    <meta charset="utf-8"/>
+    <meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+    <title>Agendar | Duarte Barbearia</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Newsreader:ital,opsz,wght@0,6..72,400;0,6..72,700;1,6..72,400;1,6..72,700&family=Manrope:wght@300;400;500;600;700;800&display=swap" rel="stylesheet"/>
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@24,400,0,0&display=swap" rel="stylesheet"/>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: { headline: ['Newsreader', 'serif'], body: ['Manrope', 'sans-serif'] },
+                    colors: { primary: '#f1c97d', 'primary-dark': '#d4ad65', 'on-primary': '#412d00' }
+                }
+            }
+        };
+    </script>
+    <style>
+        * { font-family: 'Manrope', sans-serif; }
+        .headline { font-family: 'Newsreader', serif; }
+        .btn-gold { background: linear-gradient(135deg, #f1c97d 0%, #c9940d 100%); }
+        .glow-gold { box-shadow: 0 0 40px rgba(212, 175, 55, 0.15); }
+        ::-webkit-scrollbar { width: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #2a2a2a; border-radius: 99px; }
+        .fade-in { animation: fadeUp .4s ease both; }
+        @keyframes fadeUp { from { opacity:0; transform:translateY(18px); } to { opacity:1; transform:translateY(0); } }
+        .progress-bar { transition: width .5s cubic-bezier(.4,0,.2,1); }
+        .option-btn { transition: all .2s ease; }
+        .option-btn.selected { box-shadow: 0 0 0 2px #f1c97d, 0 8px 24px rgba(212,175,55,0.15); }
+        input:focus { outline: none; box-shadow: 0 0 0 2px rgba(212,175,55,0.3); }
+    </style>
+</head>
+<body class="bg-[#080808] text-white min-h-screen flex flex-col">
+
+<!-- ─── NAV ─────────────────────────────────────────── -->
+<nav class="fixed top-0 w-full z-50 bg-[#080808]/80 backdrop-blur-xl border-b border-white/[0.06]">
+    <div class="max-w-6xl mx-auto px-6 h-16 flex items-center justify-between">
+        <a href="home_screen.html" class="flex items-center gap-3 group">
+            <img src="logo.png" alt="Logo" class="h-8 w-auto drop-shadow-[0_0_8px_rgba(241,201,125,0.4)] group-hover:drop-shadow-[0_0_16px_rgba(241,201,125,0.6)] transition-all">
+            <span class="headline font-bold text-primary text-base uppercase tracking-tight hidden sm:block">Duarte Barbearia</span>
+        </a>
+        <a href="client.html" class="text-[0.6rem] font-bold uppercase tracking-[0.2rem] text-white/30 hover:text-primary transition-colors flex items-center gap-1.5">
+            <span class="material-symbols-outlined text-sm">person</span>
+            <span id="nav-username">Meu Painel</span>
+        </a>
+    </div>
+</nav>
+
+<!-- ─── LAYOUT ─────────────────────────────────────── -->
+<div class="flex flex-col lg:flex-row min-h-screen pt-16">
+
+    <!-- LEFT SIDEBAR (decorative) -->
+    <aside class="hidden lg:flex flex-col w-[340px] xl:w-[380px] flex-shrink-0 bg-[#0d0d0d] border-r border-white/[0.06] relative overflow-hidden">
+        
+        <!-- Background glow -->
+        <div class="absolute top-1/3 -left-20 w-64 h-64 bg-primary/8 rounded-full blur-[80px] pointer-events-none"></div>
+        <div class="absolute bottom-1/4 right-0 w-40 h-40 bg-primary/5 rounded-full blur-[60px] pointer-events-none"></div>
+
+        <div class="flex flex-col justify-between h-full p-10 relative z-10">
+            <!-- Top -->
+            <div>
+                <div class="w-px h-16 bg-gradient-to-b from-primary/0 via-primary/40 to-primary/0 mb-8"></div>
+                <p class="text-[0.5rem] uppercase tracking-[0.4rem] text-primary/60 font-black mb-3">Agendamento</p>
+                <h1 class="headline text-4xl xl:text-5xl font-bold text-white leading-tight mb-6">
+                    Reserve seu<br><span class="text-primary italic">momento.</span>
+                </h1>
+                <p class="text-white/30 text-sm leading-relaxed">Escolha o profissional, serviço, data e horário. Rápido e sem complicação.</p>
+
+                <!-- Steps list (visual) -->
+                <div class="mt-12 space-y-5" id="sidebar-steps">
+                    <!-- rendered by JS -->
+                </div>
+            </div>
+
+            <!-- Bottom contact -->
+            <div class="border-t border-white/[0.06] pt-8 space-y-3">
+                <p class="text-[0.45rem] uppercase tracking-[0.3rem] text-white/20 font-black">Dúvidas?</p>
+                <a href="https://wa.me/5511937179942" target="_blank" class="flex items-center gap-2 text-white/40 hover:text-[#25D366] transition-colors group">
+                    <svg class="w-4 h-4 fill-current flex-shrink-0" viewBox="0 0 24 24"><path d="M17.472 14.382c-.297-.149-1.758-.867-2.03-.967-.273-.099-.471-.148-.67.15-.197.297-.767.966-.94 1.164-.173.199-.347.223-.644.075-.297-.15-1.255-.463-2.39-1.475-.883-.788-1.48-1.761-1.653-2.059-.173-.297-.018-.458.13-.606.134-.133.298-.347.446-.52.149-.174.198-.298.298-.497.099-.198.05-.371-.025-.52-.075-.149-.669-1.612-.916-2.207-.242-.579-.487-.5-.669-.51-.173-.008-.371-.01-.57-.01-.198 0-.52.074-.792.372-.272.297-1.04 1.016-1.04 2.479 0 1.462 1.065 2.875 1.213 3.074.149.198 2.096 3.2 5.077 4.487.709.306 1.262.489 1.694.625.712.227 1.36.195 1.871.118.571-.085 1.758-.719 2.006-1.413.248-.694.248-1.289.173-1.413-.074-.124-.272-.198-.57-.347z"/><path d="M12 0C5.373 0 0 5.373 0 12c0 2.127.558 4.117 1.532 5.845L.057 23.571a.5.5 0 0 0 .61.611l5.794-1.489A11.945 11.945 0 0 0 12 24c6.627 0 12-5.373 12-12S18.627 0 12 0zm0 21.818a9.8 9.8 0 0 1-5.003-1.374l-.358-.214-3.723.956.986-3.614-.234-.372A9.758 9.758 0 0 1 2.182 12C2.182 6.57 6.57 2.182 12 2.182S21.818 6.57 21.818 12 17.43 21.818 12 21.818z"/></svg>
+                    <span class="text-xs font-medium">(11) 93717-9942</span>
+                </a>
+                <p class="text-white/20 text-[0.6rem]">Seg–Sáb, 09h às 20h</p>
+            </div>
+        </div>
+    </aside>
+
+    <!-- RIGHT CONTENT -->
+    <main class="flex-1 flex flex-col items-center justify-center px-4 py-10 lg:px-12 xl:px-16">
+
+        <!-- AUTH GATE -->
+        <div id="auth-gate" class="hidden w-full max-w-md fade-in">
+            <div class="text-center mb-10">
+                <div class="w-14 h-14 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center mx-auto mb-5">
+                    <span class="material-symbols-outlined text-primary text-2xl">lock</span>
+                </div>
+                <h2 class="headline text-3xl font-bold text-white mb-2">Acesse sua conta</h2>
+                <p class="text-white/30 text-sm">Ou crie uma gratuitamente para agendar</p>
+            </div>
+
+            <div class="bg-[#111] border border-white/[0.08] rounded-3xl p-8 space-y-4">
+                <div id="gate-name-wrap" class="hidden space-y-1">
+                    <label class="block text-[0.5rem] uppercase tracking-[0.25rem] text-primary/70 font-black px-1">Seu Nome</label>
+                    <input id="gate-name" type="text" placeholder="Como devemos te chamar?" class="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-2xl px-5 py-4 text-white text-sm placeholder:text-white/20 transition-all">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[0.5rem] uppercase tracking-[0.25rem] text-primary/70 font-black px-1">WhatsApp</label>
+                    <input id="gate-phone" type="tel" placeholder="(11) 90000-0000" class="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-2xl px-5 py-4 text-white text-sm placeholder:text-white/20 transition-all">
+                </div>
+                <div class="space-y-1">
+                    <label class="block text-[0.5rem] uppercase tracking-[0.25rem] text-primary/70 font-black px-1">Senha</label>
+                    <input id="gate-pass" type="password" placeholder="••••••" class="w-full bg-[#0a0a0a] border border-white/[0.08] rounded-2xl px-5 py-4 text-white text-sm placeholder:text-white/20 transition-all">
+                </div>
+                <p id="gate-err" class="hidden text-red-400/80 text-xs text-center font-bold bg-red-400/5 py-3 rounded-2xl border border-red-400/10"></p>
+                <button onclick="submitGate()" class="btn-gold w-full text-[#412d00] font-extrabold uppercase text-xs tracking-[0.3rem] py-4 rounded-2xl hover:brightness-110 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg shadow-primary/20 mt-2">
+                    Confirmar e Agendar
+                </button>
+                <button onclick="toggleGate()" id="gate-toggle" class="w-full text-white/25 hover:text-primary/60 text-[0.55rem] uppercase tracking-[0.2rem] font-bold transition-colors text-center pt-1">
+                    Não tenho conta — Cadastrar grátis
+                </button>
+            </div>
+        </div>
+
+        <!-- BOOKING FLOW -->
+        <div id="booking-flow" class="hidden w-full max-w-xl fade-in">
+
+            <!-- Progress bar -->
+            <div class="mb-8">
+                <div class="flex justify-between items-center mb-3">
+                    <p class="text-[0.5rem] uppercase tracking-[0.3rem] text-white/30 font-black" id="progress-label">Passo 1 de 5</p>
+                    <p class="text-[0.5rem] uppercase tracking-[0.3rem] text-primary/60 font-black" id="progress-step-name">Profissional</p>
+                </div>
+                <div class="h-0.5 bg-white/[0.06] rounded-full overflow-hidden">
+                    <div id="progress-bar" class="h-full bg-gradient-to-r from-primary/60 to-primary progress-bar rounded-full" style="width:20%"></div>
+                </div>
+            </div>
+
+            <!-- Card -->
+            <div class="bg-[#111] border border-white/[0.08] rounded-3xl overflow-hidden glow-gold" style="box-shadow: 0 0 0 1px rgba(241,201,125,0.04), 0 32px 64px rgba(0,0,0,0.4)">
+
+                <!-- Card Header -->
+                <div class="px-8 py-6 bg-[#0d0d0d] border-b border-white/[0.06] flex items-center gap-4">
+                    <div class="w-10 h-10 rounded-2xl bg-primary/10 border border-primary/20 flex items-center justify-center flex-shrink-0">
+                        <span class="material-symbols-outlined text-primary" id="step-icon">person</span>
+                    </div>
+                    <div>
+                        <p class="text-[0.45rem] uppercase tracking-[0.35rem] text-primary/50 font-black">Agendamento</p>
+                        <h2 class="headline text-xl font-bold text-white leading-tight" id="step-title">Escolha o Profissional</h2>
+                    </div>
+                </div>
+
+                <!-- Card Body -->
+                <div class="p-8 min-h-[300px] max-h-[52vh] overflow-y-auto" id="step-body">
+                </div>
+
+                <!-- Card Footer -->
+                <div class="px-8 py-5 bg-[#0d0d0d]/60 border-t border-white/[0.06] flex items-center justify-between gap-4">
+                    <button id="btn-back" onclick="goBack()" class="hidden items-center gap-2 text-white/30 hover:text-white text-[0.6rem] uppercase tracking-widest font-black transition-all border border-white/[0.08] hover:border-white/20 px-5 py-3 rounded-2xl">
+                        <span class="material-symbols-outlined text-sm">arrow_back</span> Voltar
+                    </button>
+                    <div id="btn-spacer" class="flex-1"></div>
+                    <button id="btn-next" onclick="goNext()" disabled
+                        class="btn-gold text-[#412d00] font-extrabold uppercase text-[0.6rem] px-8 py-3.5 rounded-2xl tracking-widest disabled:opacity-20 disabled:cursor-not-allowed hover:brightness-110 hover:scale-105 active:scale-95 transition-all shadow-lg shadow-primary/20 flex items-center gap-2">
+                        Avançar <span class="material-symbols-outlined text-sm">arrow_forward</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Selection summary chips -->
+            <div class="flex flex-wrap gap-2 mt-5" id="summary-chips"></div>
+        </div>
+    </main>
+</div>
+
+<script>
+const SERVICES = [
+    { cat: 'Cortes & Combos', icon: 'content_cut', items: [{n:'Corte',p:40},{n:'Corte + Sobrancelha',p:45},{n:'Corte + Barba',p:80},{n:'Corte + Barba + Terapia',p:90},{n:'Corte + Pigmentação',p:80}] },
+    { cat: 'Barba & Design', icon: 'face', items: [{n:'Barba + Pigmentação',p:80},{n:'Sobrancelha',p:10},{n:'Pigmentação',p:40}] },
+    { cat: 'Química & Spa', icon: 'spa', items: [{n:'Alisamento',p:30},{n:'Progressiva',p:70},{n:'Luzes',p:80},{n:'Platinado',p:100}] }
+];
+
+const STEP_META = [
+    { label: 'Profissional', icon: 'person' },
+    { label: 'Serviço', icon: 'content_cut' },
+    { label: 'Data', icon: 'event' },
+    { label: 'Horário', icon: 'schedule' },
+    { label: 'Revisão', icon: 'check_circle' },
+];
+
+let step = 1;
+let data = { barber:'', service:'', price:0, date:'', time:'', notes:'', name:'', phone:'', selectedServices:[] };
+let isLogin = true;
+
+function toggleService(name, price) {
+    if(!data.selectedServices) data.selectedServices = [];
+    const idx = data.selectedServices.findIndex(s => s.n === name);
+    if (idx > -1) {
+        data.selectedServices.splice(idx, 1);
+    } else {
+        data.selectedServices.push({ n: name, p: Number(price) });
+    }
+    data.service = data.selectedServices.map(s => s.n).join(' + ');
+    data.price = data.selectedServices.reduce((acc, s) => acc + s.p, 0);
+    renderStep();
+}
+
+function init() {
+    const logged = localStorage.getItem('barbearia_logged_in');
+    if (logged) {
+        const u = JSON.parse(logged);
+        data.name = u.name; data.phone = u.phone;
+        document.getElementById('nav-username').textContent = u.name.split(' ')[0];
+        showFlow();
+    } else {
+        document.getElementById('auth-gate').classList.remove('hidden');
+    }
+    renderSidebar();
+}
+
+function getBarberSchedule(barberName, barbersList) {
+    const settingsV2 = JSON.parse(localStorage.getItem('barbearia_settings_v2') || '{}');
+    const settingsLegacy = JSON.parse(localStorage.getItem('barbearia_settings') || 'null');
+    const defaultHrs = {"0":"","1":"09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:00, 17:30, 18:00, 18:30","2":"09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:00, 17:30, 18:00, 18:30","3":"09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:00, 17:30, 18:00, 18:30","4":"09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:00, 17:30, 18:00, 18:30","5":"09:00, 09:30, 10:00, 10:30, 11:00, 11:30, 14:00, 14:30, 15:00, 15:30, 16:00, 16:30, 17:00, 17:30, 18:00, 18:30","6":"09:00, 09:30, 10:00, 10:30, 11:00, 11:30"};
+    
+    if (barberName && barberName !== 'Qualquer disponível') {
+        if (settingsV2[barberName] && settingsV2[barberName].weeklyHours !== undefined) return settingsV2[barberName].weeklyHours;
+        if (settingsLegacy && settingsLegacy.weeklyHours !== undefined) return settingsLegacy.weeklyHours;
+        return defaultHrs;
+    }
+    
+    let unionHrs = {};
+    let hasAny = false;
+    barbersList.filter(b=>b!=='Qualquer disponível').forEach(b => {
+        const bHrs = settingsV2[b]?.weeklyHours || settingsLegacy?.weeklyHours || defaultHrs;
+        for(let j=0; j<7; j++) {
+            const arr1 = unionHrs[j] ? unionHrs[j].split(',').map(x=>x.trim()).filter(x=>x) : [];
+            const arr2 = bHrs[j] ? bHrs[j].split(',').map(x=>x.trim()).filter(x=>x) : [];
+            unionHrs[j] = [...new Set([...arr1, ...arr2])].sort().join(', ');
+        }
+        hasAny = true;
+    });
+    if (hasAny) return unionHrs;
+    if (settingsLegacy && settingsLegacy.weeklyHours !== undefined) return settingsLegacy.weeklyHours;
+    return defaultHrs;
+}
+
+function renderSidebar() {
+    const el = document.getElementById('sidebar-steps');
+    if (!el) return;
+    el.innerHTML = STEP_META.map((s, i) => `
+        <div class="flex items-center gap-4 transition-all ${i < step ? 'opacity-100' : 'opacity-25'}">
+            <div class="w-8 h-8 rounded-xl flex items-center justify-center flex-shrink-0 ${i < step ? 'bg-primary/20 border border-primary/40' : 'bg-white/[0.04] border border-white/[0.06]'}">
+                <span class="material-symbols-outlined text-sm ${i < step ? 'text-primary' : 'text-white/20'}">${s.icon}</span>
+            </div>
+            <span class="text-xs font-bold uppercase tracking-wider ${i < step ? 'text-white/70' : 'text-white/20'}">${s.label}</span>
+            ${i < step - 1 ? '<span class="material-symbols-outlined text-primary text-sm ml-auto">check</span>' : ''}
+        </div>`).join('');
+}
+
+function showFlow() {
+    document.getElementById('auth-gate').classList.add('hidden');
+    document.getElementById('booking-flow').classList.remove('hidden');
+    renderStep();
+}
+
+function toggleGate() {
+    isLogin = !isLogin;
+    document.getElementById('gate-name-wrap').classList.toggle('hidden', isLogin);
+    document.getElementById('gate-toggle').textContent = isLogin ? 'Não tenho conta — Cadastrar grátis' : 'Já tenho conta — Entrar';
+}
+
+function submitGate() {
+    const phone = document.getElementById('gate-phone').value.trim();
+    const pass  = document.getElementById('gate-pass').value;
+    const name  = document.getElementById('gate-name').value.trim();
+    const err   = document.getElementById('gate-err');
+    if (!phone || !pass || (!isLogin && !name)) { err.textContent='Preencha todos os campos.'; err.classList.remove('hidden'); return; }
+    let accs = JSON.parse(localStorage.getItem('barbearia_accounts') || '[]');
+    if (isLogin) {
+        const u = accs.find(a => a.phone===phone && a.pass===pass);
+        if (!u) { err.textContent='Credenciais inválidas.'; err.classList.remove('hidden'); return; }
+        localStorage.setItem('barbearia_logged_in', JSON.stringify(u));
+        data.name=u.name; data.phone=u.phone;
+    } else {
+        if (accs.find(a=>a.phone===phone)) { err.textContent='WhatsApp já cadastrado.'; err.classList.remove('hidden'); return; }
+        const nu={phone,name,pass}; accs.push(nu);
+        localStorage.setItem('barbearia_accounts', JSON.stringify(accs));
+        localStorage.setItem('barbearia_logged_in', JSON.stringify(nu));
+        data.name=name; data.phone=phone;
+    }
+    showFlow();
+}
+
+function updateProgress() {
+    const pct = (step / 5) * 100;
+    document.getElementById('progress-bar').style.width = pct + '%';
+    document.getElementById('progress-label').textContent = `Passo ${step} de 5`;
+    document.getElementById('progress-step-name').textContent = STEP_META[step-1].label;
+    renderSidebar();
+}
+
+function renderSummaryChips() {
+    const chips = document.getElementById('summary-chips');
+    const items = [];
+    if (data.barber)  items.push({ icon:'person',  label: data.barber });
+    if (data.service) items.push({ icon:'content_cut', label: `${data.service} · R$${data.price}` });
+    if (data.date)    items.push({ icon:'event',    label: data.date.split('-').reverse().join('/') });
+    if (data.time)    items.push({ icon:'schedule', label: data.time });
+    chips.innerHTML = items.map(c => `
+        <div class="flex items-center gap-1.5 bg-primary/8 border border-primary/15 rounded-xl px-3 py-1.5">
+            <span class="material-symbols-outlined text-primary text-xs">${c.icon}</span>
+            <span class="text-[0.6rem] font-bold text-white/60">${c.label}</span>
+        </div>`).join('');
+}
+
+function renderStep() {
+    updateProgress();
+    renderSummaryChips();
+    const body = document.getElementById('step-body');
+    const meta = STEP_META[step-1];
+    document.getElementById('step-title').textContent = meta.label;
+    document.getElementById('step-icon').textContent = meta.icon;
+    const btnNext = document.getElementById('btn-next');
+    const btnBack = document.getElementById('btn-back');
+    btnNext.disabled = true;
+    if (step === 1) { btnBack.classList.add('hidden'); btnBack.classList.remove('flex'); }
+    else { btnBack.classList.remove('hidden'); btnBack.classList.add('flex'); }
+    btnNext.innerHTML = step===5 ? 'Confirmar Reserva <span class="material-symbols-outlined text-sm">check</span>' : 'Avançar <span class="material-symbols-outlined text-sm">arrow_forward</span>';
+
+    if (step === 1) {
+        const bs = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
+        body.innerHTML = `<div class="grid grid-cols-2 gap-3">` + bs.map(b => {
+            const sel = data.barber===b;
+            return `<button onclick="data.barber='${b}'; renderStep();" class="option-btn flex flex-col items-center gap-3 p-6 rounded-2xl border bg-[#0a0a0a] ${sel?'border-primary selected':'border-white/[0.07] hover:border-white/20'} transition-all">
+                <div class="w-12 h-12 rounded-full ${sel?'bg-primary/20 border-primary/40':'bg-white/[0.04] border-white/10'} border flex items-center justify-center">
+                    <span class="material-symbols-outlined ${sel?'text-primary':'text-white/30'} text-2xl">person</span>
+                </div>
+                <span class="text-xs font-black uppercase tracking-wider ${sel?'text-primary':'text-white/40'}">${b}</span>
+            </button>`;
+        }).join('') + `</div>`;
+        if (data.barber) btnNext.disabled = false;
+
+    } else if (step === 2) {
+        let html = '';
+        SERVICES.forEach(c => {
+            html += `<div class="mb-6">
+                <div class="flex items-center gap-2 mb-3">
+                    <span class="material-symbols-outlined text-primary text-sm">${c.icon}</span>
+                    <p class="text-[0.55rem] font-black uppercase tracking-[0.35rem] text-primary/70">${c.cat}</p>
+                </div>
+                <div class="space-y-2">`;
+            c.items.forEach(s => {
+                const sel = data.selectedServices && data.selectedServices.some(x => x.n === s.n);
+                html += `<button onclick="toggleService('${s.n}', ${s.p})" class="option-btn w-full flex justify-between items-center px-5 py-4 rounded-2xl border bg-[#0a0a0a] ${sel?'border-primary selected':'border-white/[0.07] hover:border-white/15'} transition-all group">
+                    <span class="text-sm font-bold ${sel?'text-white':'text-white/60'} group-hover:text-white transition-colors">${s.n}</span>
+                    <span class="headline text-lg font-bold ${sel?'text-primary':'text-white/25'} group-hover:text-primary/60 transition-colors">R$ ${s.p}</span>
+                </button>`;
+            });
+            html += `</div></div>`;
+        });
+        body.innerHTML = html;
+        if (data.selectedServices && data.selectedServices.length > 0) btnNext.disabled = false;
+
+    } else if (step === 3) {
+
+        const allBookings = JSON.parse(localStorage.getItem('barbearia_bookings') || '[]');
+        const barbersList = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
+        const totalActualBarbers = barbersList.filter(b => b !== 'Qualquer disponível').length;
+        const currentHrs = getBarberSchedule(data.barber, barbersList);
+
+        let html = `<div class="flex gap-2 overflow-x-auto pb-3 -mx-2 px-2">`;
+        for (let i=0; i<35; i++) {
+            const d = new Date(); d.setDate(d.getDate()+i);
+            const dayOfWeek = d.getDay();
+            const iso = d.toISOString().split('T')[0];
+            
+            let availableSlots = (currentHrs[dayOfWeek] || "").split(',').map(s=>s.trim()).filter(s=>s);
+            
+            if (data.barber && data.barber !== 'Qualquer disponível') {
+                const occupied = allBookings.filter(b => b.date === iso && b.barber === data.barber && b.status !== 'cancelado').map(b => b.time);
+                availableSlots = availableSlots.filter(t => !occupied.includes(t));
+            } else if (data.barber === 'Qualquer disponível') {
+                const occupiedCounts = {};
+                allBookings.forEach(b => {
+                    if (b.date === iso && b.status !== 'cancelado') {
+                        occupiedCounts[b.time] = (occupiedCounts[b.time] || 0) + 1;
+                    }
+                });
+                availableSlots = availableSlots.filter(t => (occupiedCounts[t] || 0) < totalActualBarbers);
+            }
+
+            if (availableSlots.length === 0) continue;
+
+            const sel = data.date===iso;
+            const isToday = i===0;
+            html += `<button onclick="data.date='${iso}'; data.time=''; renderStep();" class="option-btn flex-shrink-0 w-[4.5rem] flex flex-col items-center py-4 rounded-2xl border bg-[#0a0a0a] ${sel?'border-primary selected':'border-white/[0.06] hover:border-white/15'} transition-all">
+                <span class="text-[0.45rem] font-black uppercase ${sel?'text-primary':'text-white/25'}">${isToday?'Hoje':d.toLocaleDateString('pt-BR',{weekday:'short'})}</span>
+                <span class="headline text-2xl font-bold ${sel?'text-primary':'text-white/60'} my-0.5">${d.getDate()}</span>
+                <span class="text-[0.4rem] font-bold uppercase ${sel?'text-primary/60':'text-white/20'}">${d.toLocaleDateString('pt-BR',{month:'short'})}</span>
+            </button>`;
+        }
+        html += `</div>`;
+        body.innerHTML = html;
+        if (data.date) btnNext.disabled = false;
+
+    } else if (step === 4) {
+        const barbersList = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
+        const currentHrs = getBarberSchedule(data.barber, barbersList);
+        
+        let selectedDayOfWeek = 1;
+        if (data.date) {
+            const parts = data.date.split('-');
+            const dateObj = new Date(parts[0], parts[1]-1, parts[2]);
+            selectedDayOfWeek = dateObj.getDay();
+        }
+        
+        let availableSlots = (currentHrs[selectedDayOfWeek] || "").split(',').map(s=>s.trim()).filter(s=>s);
+        
+        const allBookings = JSON.parse(localStorage.getItem('barbearia_bookings') || '[]');
+        if (data.barber && data.barber !== 'Qualquer disponível') {
+            const occupied = allBookings.filter(b => b.date === data.date && b.barber === data.barber && b.status !== 'cancelado').map(b => b.time);
+            availableSlots = availableSlots.filter(t => !occupied.includes(t));
+        } else if (data.barber === 'Qualquer disponível') {
+            const barbersList = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
+            const totalActualBarbers = barbersList.filter(b => b !== 'Qualquer disponível').length;
+            
+            const occupiedCounts = {};
+            allBookings.forEach(b => {
+                if (b.date === data.date && b.status !== 'cancelado') {
+                    occupiedCounts[b.time] = (occupiedCounts[b.time] || 0) + 1;
+                }
+            });
+            availableSlots = availableSlots.filter(t => (occupiedCounts[t] || 0) < totalActualBarbers);
+        }
+
+        const morning = availableSlots.filter(t => parseInt(t.split(':')[0]) < 12);
+        const afternoon = availableSlots.filter(t => parseInt(t.split(':')[0]) >= 12);
+
+        const renderSlots = (slots) => slots.length > 0 ? slots.map(t => {
+            const sel = data.time===t;
+            return `<button onclick="data.time='${t}'; renderStep();" class="option-btn py-3.5 rounded-2xl border bg-[#0a0a0a] text-sm font-black tracking-widest ${sel?'border-primary selected text-primary':'border-white/[0.07] hover:border-white/20 text-white/40 hover:text-white'} transition-all">${t}</button>`;
+        }).join('') : '<p class="col-span-3 text-xs text-white/30 text-center py-2 italic">Sem horários</p>';
+
+        body.innerHTML = `
+            <div class="mb-5">
+                <p class="text-[0.5rem] uppercase tracking-[0.3rem] text-white/25 font-black mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-xs">wb_sunny</span> Manhã</p>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">${renderSlots(morning)}</div>
+            </div>
+            <div>
+                <p class="text-[0.5rem] uppercase tracking-[0.3rem] text-white/25 font-black mb-3 flex items-center gap-2"><span class="material-symbols-outlined text-xs">wb_twilight</span> Tarde</p>
+                <div class="grid grid-cols-3 sm:grid-cols-4 gap-2">${renderSlots(afternoon)}</div>
+            </div>`;
+        if (data.time) btnNext.disabled = false;
+
+    } else if (step === 5) {
+        const dateLabel = data.date ? data.date.split('-').reverse().join('/') : '–';
+        body.innerHTML = `
+            <div class="space-y-4">
+                <div class="bg-[#0a0a0a] border border-primary/10 rounded-2xl overflow-hidden">
+                    ${[
+                        ['Serviço', data.service, 'content_cut'],
+                        ['Profissional', data.barber, 'person'],
+                        ['Data', dateLabel, 'event'],
+                        ['Horário', data.time, 'schedule'],
+                    ].map(([l,v,ic]) => `
+                        <div class="flex justify-between items-center px-6 py-4 border-b border-white/[0.04] last:border-0">
+                            <div class="flex items-center gap-2 text-white/40">
+                                <span class="material-symbols-outlined text-sm text-primary/50">${ic}</span>
+                                <span class="text-xs font-bold uppercase tracking-wider">${l}</span>
+                            </div>
+                            <span class="text-sm font-bold text-white">${v}</span>
+                        </div>`).join('')}
+                </div>
+                <div class="bg-gradient-to-r from-primary/10 to-primary/5 border border-primary/20 rounded-2xl px-6 py-5 flex justify-between items-center">
+                    <span class="text-[0.55rem] font-black uppercase tracking-[0.3rem] text-white/40">Total</span>
+                    <span class="headline text-4xl font-bold text-primary drop-shadow-[0_0_20px_rgba(241,201,125,0.3)]">R$ ${data.price}</span>
+                </div>
+                <p class="text-center text-[0.5rem] uppercase tracking-[0.2rem] text-white/15 font-bold">Ao confirmar, sua reserva é registrada instantaneamente.</p>
+            </div>`;
+        btnNext.disabled = false;
+    }
+
+    body.scrollTo({ top:0, behavior:'smooth' });
+}
+
+function goNext() {
+    if (step < 5) { step++; renderStep(); }
+    else confirmBooking();
+}
+function goBack() {
+    if (step > 1) { step--; renderStep(); }
+}
+
+function confirmBooking() {
+    const bookings = JSON.parse(localStorage.getItem('barbearia_bookings')||'[]');
+    bookings.push({...data, id:Date.now(), status:'pendente'});
+    localStorage.setItem('barbearia_bookings', JSON.stringify(bookings));
+
+    document.getElementById('progress-bar').style.width = '100%';
+    document.getElementById('progress-label').textContent = 'Agendamento confirmado!';
+    document.getElementById('progress-step-name').textContent = '✓';
+
+    document.getElementById('step-body').innerHTML = `
+        <div class="py-12 flex flex-col items-center gap-6 text-center fade-in">
+            <div class="relative">
+                <div class="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.15)]">
+                    <span class="material-symbols-outlined text-5xl text-emerald-400">verified</span>
+                </div>
+                <div class="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                    <span class="material-symbols-outlined text-white text-xs">check</span>
+                </div>
+            </div>
+            <div>
+                <h3 class="headline text-3xl font-bold text-white mb-2">Reservado com sucesso!</h3>
+                <p class="text-white/40 text-sm leading-relaxed max-w-xs mx-auto">
+                    Até breve, <strong class="text-white">${data.name.split(' ')[0]}</strong>.<br>
+                    Dia <strong class="text-white">${data.date.split('-').reverse().join('/')}</strong> às <strong class="text-primary">${data.time}</strong>.
+                </p>
+            </div>
+            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                <a href="client.html" class="flex-1 btn-gold text-[#412d00] font-extrabold uppercase text-xs tracking-[0.2rem] py-4 rounded-2xl text-center hover:brightness-110 hover:scale-105 transition-all shadow-xl">
+                    Ver Painel
+                </a>
+                <a href="home_screen.html" class="flex-1 border border-white/[0.08] text-white/30 font-bold uppercase text-xs tracking-[0.2rem] py-4 rounded-2xl text-center hover:border-white/20 hover:text-white transition-all">
+                    Início
+                </a>
+            </div>
+        </div>`;
+    document.getElementById('btn-next').classList.add('hidden');
+    document.getElementById('btn-back').classList.add('hidden');
+    document.getElementById('summary-chips').innerHTML = '';
+}
+
+init();
+</script>
+</body>
+</html>
