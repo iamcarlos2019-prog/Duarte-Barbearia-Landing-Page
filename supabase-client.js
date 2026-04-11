@@ -1,16 +1,20 @@
 const SUPABASE_URL = 'https://gyvaiehurysccffpqkgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1bQSZQUuOsoe5aKfBeM5DA_UidCJaPa';
 
-// Usando a biblioteca global carregada via CDN
-const client = supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+// Capturar a biblioteca global antes de sobrescrever
+const supabaseLib = window.supabase;
 
-// Exportar para uso global
-window.supabase = client; // Sobrescreve o objeto global com a instância conectada
+// Inicializar a conexão (Instância)
+const client = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+// Exportar a instância para uso global para não quebrar scripts legados
+window.supabase = client; 
+
 window.SupabaseService = {
     // Produtos
     async getProducts() {
         try {
-            const { data, error } = await supabase
+            const { data, error } = await client
                 .from('products')
                 .select('*')
                 .order('created_at', { ascending: false });
@@ -26,7 +30,7 @@ window.SupabaseService = {
     },
     
     async addProduct(product) {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('products')
             .insert([product])
             .select();
@@ -35,7 +39,7 @@ window.SupabaseService = {
     },
 
     async updateProduct(id, updates) {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('products')
             .update(updates)
             .eq('id', id)
@@ -45,7 +49,7 @@ window.SupabaseService = {
     },
 
     async deleteProduct(id) {
-        const { error } = await supabase
+        const { error } = await client
             .from('products')
             .delete()
             .eq('id', id);
@@ -54,7 +58,7 @@ window.SupabaseService = {
 
     // Barbeiros
     async getBarbers() {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('barbers')
             .select('*')
             .eq('active', true);
@@ -63,7 +67,7 @@ window.SupabaseService = {
     },
 
     async addBarber(name) {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('barbers')
             .insert([{ name }])
             .select();
@@ -73,7 +77,7 @@ window.SupabaseService = {
 
     // Agendamentos
     async getBookings() {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('bookings')
             .select('*')
             .order('booking_date', { ascending: true })
@@ -83,7 +87,7 @@ window.SupabaseService = {
     },
 
     async createBooking(booking) {
-        const { data, error } = await supabase
+        const { data, error } = await client
             .from('bookings')
             .insert([booking])
             .select();
