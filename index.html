@@ -1190,28 +1190,30 @@
                         ` : ''}
                     </div>
 
-                    <div class="flex justify-between items-center mb-4 transition-all">
-                        <h4 class="font-headline text-2xl font-bold text-white leading-tight">${p.name}</h4>
+                    <div class="flex justify-between items-center mb-4">
+                        <h4 class="font-headline text-2xl font-bold text-white tracking-tight">${p.name}</h4>
                         <div class="text-right shrink-0">
-                            <p class="text-[0.65rem] uppercase tracking-widest font-extrabold ${stock <= 3 ? 'text-red-500 animate-pulse' : 'text-primary' }">
+                            <p class="text-[0.6rem] uppercase tracking-[0.2rem] font-black ${stockColor} px-3 py-1 bg-white/5 rounded-full border border-white/10">
                                 ${stock <= 0 ? 'Esgotado' : `${stock} UN`}
                             </p>
                         </div>
                     </div>
 
-                    <p class="text-sm md:text-base text-white/80 mb-8 leading-relaxed line-clamp-3 min-h-[4.5rem] font-medium">${p.description}</p>
+                    <p class="text-[0.85rem] md:text-base text-white/70 mb-8 leading-relaxed line-clamp-3 min-h-[4.5rem] font-medium italic">"${p.description}"</p>
                     
                     <div class="mt-auto pt-8 border-t border-white/10 flex flex-col gap-6">
                         <div class="flex justify-between items-center">
-                            <span class="text-[0.7rem] uppercase font-black tracking-[0.2rem] text-white/40">Preço</span>
-                            <span class="text-3xl font-headline font-black text-primary">R$ ${p.price}</span>
+                            <div class="flex flex-col">
+                                <span class="text-[0.6rem] uppercase font-black tracking-[0.3rem] text-primary/40">Preço</span>
+                                <span class="text-3xl font-headline font-black text-primary">R$ ${p.price}</span>
+                            </div>
                         </div>
                         
                         <a href="${isOutOfStock ? '#' : `https://wa.me/5511937179942?text=Olá! Gostaria de encomendar ${p.name}`}" 
-                           ${isOutOfStock ? 'style="pointer-events: none; opacity: 0.2;"' : ''}
-                           class="w-full bg-primary py-5 rounded-2xl flex items-center justify-center gap-4 transition-all active:scale-95 shadow-lg shadow-primary/10">
-                            <span class="material-symbols-outlined text-xl text-black font-black">shopping_bag</span>
-                            <span class="font-label font-black uppercase text-[0.8rem] tracking-[0.2rem] text-black">Comprar Agora</span>
+                           ${isOutOfStock ? 'style="pointer-events: none; opacity: 0.1;"' : ''}
+                           class="w-full bg-[#D4AF37] hover:bg-[#F1C97D] text-black py-5 rounded-[1.5rem] flex items-center justify-center gap-4 transition-all active:scale-95 shadow-[0_10px_30px_rgba(212,175,55,0.2)] group/btn">
+                            <span class="material-symbols-outlined text-[1.4rem] font-bold">shopping_bag</span>
+                            <span class="font-label font-black uppercase text-[0.85rem] tracking-[0.3rem]">Comprar Agora</span>
                         </a>
                     </div>
                 </div>
