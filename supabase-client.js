@@ -70,11 +70,30 @@ window.SupabaseService = {
         }
     },
 
-    async addBarber(name) {
+    async createBarber(data) {
         if (!client) throw new Error("Supabase não conectado");
-        const { data, error } = await client.from('barbers').insert([{ name }]).select();
+        const { data: b, error } = await client.from('barbers').insert([data]).select();
         if (error) throw error;
-        return data[0];
+        return b[0];
+    },
+
+    async deleteBarber(id) {
+        if (!client) throw new Error("Supabase não conectado");
+        const { error } = await client.from('barbers').delete().eq('id', id);
+        if (error) throw error;
+    },
+
+    // Clientes
+    async getClients() {
+        if (!client) return [];
+        try {
+            const { data, error } = await client.from('clients').select('*').order('name', { ascending: true });
+            if (error) throw error;
+            return data;
+        } catch (e) {
+            console.error('[Supabase] Erro ao buscar clientes:', e);
+            return [];
+        }
     },
 
     // Agendamentos
@@ -99,5 +118,18 @@ window.SupabaseService = {
         const { data, error } = await client.from('bookings').insert([booking]).select();
         if (error) throw error;
         return data[0];
+    },
+
+    async updateBooking(id, updates) {
+        if (!client) throw new Error("Supabase não conectado");
+        const { data, error } = await client.from('bookings').update(updates).eq('id', id).select();
+        if (error) throw error;
+        return data[0];
+    },
+
+    async deleteBooking(id) {
+        if (!client) throw new Error("Supabase não conectado");
+        const { error } = await client.from('bookings').delete().eq('id', id);
+        if (error) throw error;
     }
 };

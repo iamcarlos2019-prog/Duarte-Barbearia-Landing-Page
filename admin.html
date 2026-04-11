@@ -407,9 +407,10 @@
 
 <script>
     let activeBookingId = null;
-
-
     let productsData = [];
+    let bookingsData = [];
+    let clientsData = [];
+    let barbersData = [];
     let currentEditingProductId = null;
     let currentImageBase64 = null;
 
@@ -498,6 +499,7 @@
             let pendingToday = 0;
             let monthlyCount = 0;
             const payStats = { dinheiro: 0, pix: 0, debito: 0, credito: 0 };
+            const bookings = bookingsData || [];
 
             bookings.forEach(b => {
                 const val = parseFloat(b.price) || 0;
@@ -561,10 +563,10 @@
         const emptyState = document.getElementById('empty-state');
         
         try {
-            const bookings = await SupabaseService.getBookings();
+            bookingsData = await SupabaseService.getBookings();
             calculateDashboardStats();
 
-            if (!bookings || bookings.length === 0) {
+            if (!bookingsData || bookingsData.length === 0) {
                 tbody.innerHTML = '';
                 emptyState.classList.remove('hidden');
                 return;
@@ -572,7 +574,7 @@
             emptyState.classList.add('hidden');
 
             // Sort by date/time (Supabase order by is already doing this, but we can double check)
-            tbody.innerHTML = bookings.map(b => {
+            tbody.innerHTML = bookingsData.map(b => {
                 let status = b.status || 'pendente';
                 const statusClass = {
                     'pendente': 'bg-yellow-900/40 text-yellow-500 border-yellow-500/30',
@@ -603,6 +605,115 @@
             }).join('');
         } catch (err) {
             console.error('Erro ao carregar agendamentos:', err);
+        }
+    }
+
+    async function loadAccounts() {
+        const tbody = document.getElementById('accounts-table-body');
+        try {
+            clientsData = await SupabaseService.getClients();
+            if (!clientsData || clientsData.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-10 text-center opacity-30 italic font-headline text-lg">Nenhum cliente cadastrado.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = clientsData.map(c => `
+                <tr class="hover:bg-surface-container-low transition-colors text-sm">
+                    <td class="p-5 font-bold">${c.name}</td>
+                    <td class="p-5">${c.phone}</td>
+                    <td class="p-5 opacity-60">${c.email || 'Não informado'}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error('Erro ao carregar clientes:', err);
+        }
+    }
+
+    async function loadBarbers() {
+        const list = document.getElementById('barbers-list');
+        try {
+            barbersData = await SupabaseService.getBarbers();
+            if (!barbersData || barbersData.length === 0) {
+                list.innerHTML = '<p class="col-span-full text-center opacity-30 py-10 italic">Nenhum barbeiro cadastrado.</p>';
+                return;
+            }
+            list.innerHTML = barbersData.map(b => `
+                <div class="bg-surface-container-low border border-outline-variant/10 p-5 rounded-2xl flex items-center justify-between group hover:border-primary/40 transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-primary/10 text-primary flex items-center justify-center font-bold">
+                            ${(b.name || 'B').charAt(0)}
+                        </div>
+                        <span class="font-bold">${b.name}</span>
+                    </div>
+                    <button onclick="deleteBarber('${b.id}')" class="h-8 w-8 text-on-surface-variant hover:text-red-500 transition-colors opacity-0 group-hover:opacity-100 flex items-center justify-center">
+                        <span class="material-symbols-outlined text-[1.2rem]">delete</span>
+                    </button>
+                </div>
+            `).join('');
+        } catch (err) {
+            console.error('Erro ao carregar barbeiros:', err);
+        }
+    }
+
+    async function addBarber() {
+        const nameInput = document.getElementById('new-barber-name');
+        const name = nameInput.value.trim();
+        if (!name) return;
+        try {
+            await SupabaseService.createBarber({ name });
+            nameInput.value = '';
+            loadBarbers();
+        } catch (err) {
+            console.error('Erro ao adicionar barbeiro:', err);
+        }
+    }
+
+    async function deleteBarber(id) {
+        if (!confirm('Excluir este profissional?')) return;
+        try {
+            await SupabaseService.deleteBarber(id);
+            loadBarbers();
+        } catch (err) {
+            console.error('Erro ao excluir:', err);
+        }
+    }
+
+    async function updateBookingStatus(id, status) {
+        try {
+            await SupabaseService.updateBooking(id, { status });
+            loadBookings();
+        } catch (err) {
+            console.error('Erro ao atualizar status:', err);
+        }
+    }
+
+    async function deleteBooking(id) {
+        if (!confirm('Excluir este agendamento permanentemente?')) return;
+        try {
+            await SupabaseService.deleteBooking(id);
+            loadBookings();
+        } catch (err) {
+            console.error('Erro ao excluir:', err);
+        }
+    }
+
+    async function confirmPayment(method) {
+        if (!activeBookingId) return;
+        const booking = bookingsData.find(b => b.id === activeBookingId);
+        try {
+            await SupabaseService.updateBooking(activeBookingId, { 
+                status: 'concluido',
+                payment_method: method
+            });
+            closePaymentModal();
+            loadBookings();
+            
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-8 right-8 bg-primary text-on-primary px-8 py-4 rounded-2xl shadow-2xl z-[200] animate-bounce font-bold tracking-widest text-xs uppercase';
+            toast.innerText = 'Agendamento concluído com sucesso!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 4000);
+        } catch (err) {
+            console.error('Erro no pagamento:', err);
         }
     }
 
