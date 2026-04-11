@@ -407,6 +407,10 @@
 
 <script>
     let activeBookingId = null;
+    let productsData = [];
+    let currentEditingProductId = null;
+    let currentImageBase64 = null;
+
 
     function formatDate(dateStr) {
         const parts = dateStr.split('-');
@@ -440,7 +444,14 @@
         if(tabId === 'barbers') {
             loadBarbers();
         }
+        if(tabId === 'products') {
+            loadProducts();
+        }
+        if(tabId === 'accounts') {
+            loadAccounts();
+        }
     }
+
 
     async function refreshAllData() {
         const btn = document.getElementById('btn-refresh');
@@ -847,11 +858,9 @@
         }
     }
 
-    refreshAllData();
 
-    // --- PRODUCTS LOGIC ---
-    let currentEditingProductId = null;
-    let currentImageBase64 = null;
+
+
 
     async function migrateProducts() {
         const localData = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
@@ -983,7 +992,7 @@
         }
     }
 
-    let productsData = [];
+
     async function loadProducts() {
         const grid = document.getElementById('products-list-grid');
         const empty = document.getElementById('products-empty-state');
@@ -1099,6 +1108,10 @@
             console.error('Erro ao deletar:', err);
         }
     }
+
+    // Initialize data
+    refreshAllData();
+
 </script>
 </body>
 </html>
