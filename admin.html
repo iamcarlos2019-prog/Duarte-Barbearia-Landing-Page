@@ -39,6 +39,9 @@
         .custom-scroll::-webkit-scrollbar-thumb { background: #4d4635; border-radius: 10px; }
         .tab-content.hidden { display: none; }
     </style>
+    <!-- Supabase Integration -->
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script src="supabase-client.js"></script>
 </head>
 <body class="bg-surface text-on-surface font-body p-4 md:p-8">
 
@@ -283,9 +286,14 @@
                     <h3 class="font-headline text-3xl font-bold mb-2">Gerenciar Vitrine de Produtos</h3>
                     <p class="text-sm text-on-surface-variant opacity-70">Cadastre os produtos que aparecem na sua Landing Page.</p>
                 </div>
-                <button onclick="openProductModal()" class="bg-primary text-on-primary font-label font-bold uppercase text-xs px-8 py-4 rounded-xl hover:bg-primary-container transition-all tracking-widest shadow-xl shadow-primary/20 flex items-center gap-2">
-                    <span class="material-symbols-outlined text-[1.1rem]">add_circle</span> Novo Produto
-                </button>
+                <div class="flex items-center gap-3">
+                    <button id="btn-migrate-products" onclick="migrateProducts()" class="flex items-center gap-2 px-6 py-4 rounded-xl bg-surface-container border border-outline-variant/30 text-on-surface-variant hover:text-primary transition-all text-xs font-bold uppercase tracking-widest shadow-lg">
+                        <span class="material-symbols-outlined text-[1rem]">database_upload</span> Migrar Dados Antigos
+                    </button>
+                    <button onclick="openProductModal()" class="bg-primary text-on-primary font-label font-bold uppercase text-xs px-8 py-4 rounded-xl hover:bg-primary-container transition-all tracking-widest shadow-xl shadow-primary/20 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[1.1rem]">add_circle</span> Novo Produto
+                    </button>
+                </div>
             </div>
 
             <div id="products-list-grid" class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -434,143 +442,152 @@
         }
     }
 
-    function refreshAllData() {
+    async function refreshAllData() {
         const btn = document.getElementById('btn-refresh');
         const text = document.getElementById('refresh-text');
         
-        btn.classList.add('opacity-50', 'pointer-events-none');
+        btn.classList.add('opacity-50', 'pointer-events-none', 'animate-pulse');
         text.innerText = "Sincronizando...";
-        
-        setTimeout(() => {
-            loadBookings();
-            loadAccounts();
-            initConfig();
-            loadBarbers();
-            loadProducts();
-            btn.classList.remove('opacity-50', 'pointer-events-none');
-            text.innerText = "Sincronizar Dados";
-        }, 800);
+
+        try {
+            await Promise.all([
+                loadBarbers(),
+                loadProducts(),
+                loadBookings(),
+                loadAccounts()
+            ]);
+        } catch (err) {
+            console.error('Erro na sincronização:', err);
+        }
+
+        btn.classList.remove('opacity-50', 'pointer-events-none', 'animate-pulse');
+        text.innerText = "Sincronizar Dados";
     }
 
-    function calculateDashboardStats(bookings = null) {
-        if (!bookings) {
-            bookings = JSON.parse(localStorage.getItem('barbearia_bookings') || '[]');
-        }
-        const now = new Date();
-        const todayStr = now.toISOString().split('T')[0];
-        const monthStr = now.toISOString().slice(0, 7);
-        const startOfWeek = new Date();
-        startOfWeek.setDate(now.getDate() - 7);
+    async function calculateDashboardStats() {
+        try {
+            const bookings = await SupabaseService.getBookings();
+            
+            const now = new Date();
+            const todayStr = now.toISOString().split('T')[0];
+            const monthStr = now.toISOString().slice(0, 7);
+            const startOfWeek = new Date();
+            startOfWeek.setDate(now.getDate() - 7);
 
-        const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
-        document.getElementById('stat-monthly-label').innerText = formatter.format(now).toUpperCase();
+            const formatter = new Intl.DateTimeFormat('pt-BR', { month: 'long', year: 'numeric' });
+            document.getElementById('stat-monthly-label').innerText = formatter.format(now).toUpperCase();
 
-        let weeklyRevenue = 0;
-        let monthlyRevenue = 0;
-        let pendingToday = 0;
-        let monthlyCount = 0;
-        const payStats = { dinheiro: 0, pix: 0, debito: 0, credito: 0 };
+            let weeklyRevenue = 0;
+            let monthlyRevenue = 0;
+            let pendingToday = 0;
+            let monthlyCount = 0;
+            const payStats = { dinheiro: 0, pix: 0, debito: 0, credito: 0 };
 
-        bookings.forEach(b => {
-            const val = parseFloat(b.price) || 0;
-            const bDate = new Date(b.date);
+            bookings.forEach(b => {
+                const val = parseFloat(b.price) || 0;
+                const bDateStr = b.booking_date; // YYYY-MM-DD
+                const bDate = new Date(bDateStr);
 
-            if (b.status === 'concluido' || b.status === 'concluído') {
-                if (b.date.startsWith(monthStr)) {
-                    monthlyRevenue += val;
-                    monthlyCount++;
-                    if (b.paymentMethod && payStats[b.paymentMethod] !== undefined) {
-                        payStats[b.paymentMethod] += val;
+                if (b.status === 'concluido') {
+                    if (bDateStr.startsWith(monthStr)) {
+                        monthlyRevenue += val;
+                        monthlyCount++;
+                        if (b.payment_method && payStats[b.payment_method] !== undefined) {
+                            payStats[b.payment_method] += val;
+                        }
+                    }
+                    if (bDate >= startOfWeek) {
+                        weeklyRevenue += val;
                     }
                 }
-                if (bDate >= startOfWeek) {
-                    weeklyRevenue += val;
+
+                if (b.status === 'pendente') {
+                    pendingToday++;
                 }
-            }
+            });
 
-            if (b.status === 'pendente' || !b.status || b.status === 'agendado') {
-                pendingToday++;
-            }
-        });
+            document.getElementById('stat-weekly-revenue').innerText = `R$ ${weeklyRevenue}`;
+            document.getElementById('stat-monthly-revenue').innerText = `R$ ${monthlyRevenue}`;
+            document.getElementById('stat-pending-total').innerText = pendingToday;
+            
+            const avg = monthlyCount > 0 ? monthlyRevenue / monthlyCount : 0;
+            document.getElementById('stat-avg-ticket').innerText = `R$ ${avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
 
-        document.getElementById('stat-weekly-revenue').innerText = `R$ ${weeklyRevenue}`;
-        document.getElementById('stat-monthly-revenue').innerText = `R$ ${monthlyRevenue}`;
-        document.getElementById('stat-pending-total').innerText = pendingToday;
-        
-        const avg = monthlyCount > 0 ? monthlyRevenue / monthlyCount : 0;
-        document.getElementById('stat-avg-ticket').innerText = `R$ ${avg.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('stat-pay-cash').innerText = `R$ ${payStats.dinheiro}`;
+            document.getElementById('stat-pay-pix').innerText = `R$ ${payStats.pix}`;
+            document.getElementById('stat-pay-debito').innerText = `R$ ${payStats.debito}`;
+            document.getElementById('stat-pay-credito').innerText = `R$ ${payStats.credito}`;
 
-        document.getElementById('stat-pay-cash').innerText = `R$ ${payStats.dinheiro}`;
-        document.getElementById('stat-pay-pix').innerText = `R$ ${payStats.pix}`;
-        document.getElementById('stat-pay-debito').innerText = `R$ ${payStats.debito}`;
-        document.getElementById('stat-pay-credito').innerText = `R$ ${payStats.credito}`;
+            // Sync Products Stat
+            const productsList = productsData || [];
+            let totalSold = 0;
+            let productRevenue = 0;
+            let inventoryValue = 0;
 
-        // Sync Products Stat
-        const productsList = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
-        let totalSold = 0;
-        let productRevenue = 0;
-        let inventoryValue = 0;
+            productsList.forEach(p => {
+                const price = typeof p.price === 'string' ? parseFloat(p.price.replace(',', '.')) : p.price;
+                totalSold += (p.sold || 0);
+                productRevenue += (p.sold || 0) * (price || 0);
+                inventoryValue += (p.stock || 0) * (price || 0);
+            });
 
-        productsList.forEach(p => {
-            const price = parseFloat(p.price.replace(',', '.')) || 0;
-            totalSold += (p.sold || 0);
-            productRevenue += (p.sold || 0) * price;
-            inventoryValue += (p.stock || 0) * price;
-        });
-
-        document.getElementById('stat-products-total').innerText = productsList.length;
-        document.getElementById('stat-products-sold').innerText = totalSold;
-        document.getElementById('stat-products-revenue').innerText = `R$ ${productRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
-        document.getElementById('stat-products-value').innerText = `R$ ${inventoryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('stat-products-total').innerText = productsList.length;
+            document.getElementById('stat-products-sold').innerText = totalSold;
+            document.getElementById('stat-products-revenue').innerText = `R$ ${productRevenue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+            document.getElementById('stat-products-value').innerText = `R$ ${inventoryValue.toLocaleString('pt-BR', { minimumFractionDigits: 2 })}`;
+        } catch (err) {
+            console.error('Erro ao calcular estatísticas:', err);
+        }
     }
 
-    function loadBookings() {
+    async function loadBookings() {
         const tbody = document.getElementById('bookings-table-body');
         const emptyState = document.getElementById('empty-state');
         
-        const bookings = JSON.parse(localStorage.getItem('barbearia_bookings') || '[]');
-        calculateDashboardStats(bookings);
+        try {
+            const bookings = await SupabaseService.getBookings();
+            calculateDashboardStats();
 
-        if (bookings.length === 0) {
-            tbody.innerHTML = '';
-            emptyState.classList.remove('hidden');
-            return;
+            if (!bookings || bookings.length === 0) {
+                tbody.innerHTML = '';
+                emptyState.classList.remove('hidden');
+                return;
+            }
+            emptyState.classList.add('hidden');
+
+            // Sort by date/time (Supabase order by is already doing this, but we can double check)
+            tbody.innerHTML = bookings.map(b => {
+                let status = b.status || 'pendente';
+                const statusClass = {
+                    'pendente': 'bg-yellow-900/40 text-yellow-500 border-yellow-500/30',
+                    'concluido': 'bg-green-900/40 text-green-500 border-green-500/30',
+                    'cancelado': 'bg-red-900/40 text-red-500 border-red-500/30'
+                }[status] || 'bg-outline-variant/40 text-white';
+
+                return `
+                    <tr class="hover:bg-surface-container-low transition-colors text-sm">
+                        <td class="p-5 font-bold">${formatDate(b.booking_date)}<br><span class="text-xs font-normal opacity-60">${b.booking_time}</span></td>
+                        <td class="p-5">
+                            <span class="font-bold">${b.name}</span><br>
+                            <a href="https://wa.me/55${b.phone.replace(/\D/g, '')}" class="text-primary text-xs font-bold hover:underline">WhatsApp</a>
+                        </td>
+                        <td class="p-5"><span class="font-bold">${b.service}</span><br><span class="text-xs opacity-60">${b.barber}</span></td>
+                        <td class="p-5">R$ ${b.price}<br>${b.payment_method ? `<span class="text-[0.6rem] uppercase tracking-widest font-bold opacity-60">Via ${b.payment_method}</span>` : ''}</td>
+                        <td class="p-5 text-center"><span class="px-3 py-1 rounded-full border text-[0.6rem] uppercase font-bold tracking-widest ${statusClass}">${status}</span></td>
+                        <td class="p-5 text-right flex justify-end gap-2">
+                            ${status === 'pendente' ? `
+                                <button onclick="openPaymentModal('${b.id}', '${b.name}', ${b.price})" class="h-9 w-9 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded-lg border border-green-500/20 transition-all flex items-center justify-center shadow-lg"><span class="material-symbols-outlined text-[1.2rem]">done</span></button>
+                                <button onclick="updateBookingStatus('${b.id}', 'cancelado')" class="h-9 w-9 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg border border-red-500/20 transition-all flex items-center justify-center shadow-lg"><span class="material-symbols-outlined text-[1.2rem]">close</span></button>
+                            ` : `
+                                <button onclick="deleteBooking('${b.id}')" class="h-9 w-9 bg-surface-container-low text-on-surface-variant hover:text-white rounded-lg border border-outline-variant/30 flex items-center justify-center opacity-40 hover:opacity-100 transition-all"><span class="material-symbols-outlined text-[1rem]">delete</span></button>
+                            `}
+                        </td>
+                    </tr>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error('Erro ao carregar agendamentos:', err);
         }
-        emptyState.classList.add('hidden');
-
-        bookings.sort((a, b) => b.id - a.id);
-
-        tbody.innerHTML = bookings.map(b => {
-            let status = b.status || 'pendente';
-            if (status === 'agendado') status = 'pendente';
-
-            const statusClass = {
-                'pendente': 'bg-yellow-900/40 text-yellow-500 border-yellow-500/30',
-                'concluido': 'bg-green-900/40 text-green-500 border-green-500/30',
-                'cancelado': 'bg-red-900/40 text-red-500 border-red-500/30'
-            }[status] || 'bg-outline-variant/40 text-white';
-
-            return `
-                <tr class="hover:bg-surface-container-low transition-colors text-sm">
-                    <td class="p-5 font-bold">${formatDate(b.date)}<br><span class="text-xs font-normal opacity-60">${b.time}</span></td>
-                    <td class="p-5">
-                        <span class="font-bold">${b.name}</span><br>
-                        <a href="https://wa.me/55${b.phone.replace(/\D/g, '')}" class="text-primary text-xs font-bold hover:underline">WhatsApp</a>
-                    </td>
-                    <td class="p-5"><span class="font-bold">${b.service}</span><br><span class="text-xs opacity-60">${b.barber}</span></td>
-                    <td class="p-5">R$ ${b.price}<br>${b.paymentMethod ? `<span class="text-[0.6rem] uppercase tracking-widest font-bold opacity-60">Via ${b.paymentMethod}</span>` : ''}</td>
-                    <td class="p-5 text-center"><span class="px-3 py-1 rounded-full border text-[0.6rem] uppercase font-bold tracking-widest ${statusClass}">${status}</span></td>
-                    <td class="p-5 text-right flex justify-end gap-2">
-                        ${status === 'pendente' ? `
-                            <button onclick="openPaymentModal(${b.id}, '${b.name}', ${b.price})" class="h-9 w-9 bg-green-500/10 text-green-500 hover:bg-green-500 hover:text-white rounded-lg border border-green-500/20 transition-all flex items-center justify-center shadow-lg"><span class="material-symbols-outlined text-[1.2rem]">done</span></button>
-                            <button onclick="updateBookingStatus(${b.id}, 'cancelado')" class="h-9 w-9 bg-red-500/10 text-red-500 hover:bg-red-500 hover:text-white rounded-lg border border-red-500/20 transition-all flex items-center justify-center shadow-lg"><span class="material-symbols-outlined text-[1.2rem]">close</span></button>
-                        ` : `
-                            <button onclick="deleteBooking(${b.id})" class="h-9 w-9 bg-surface-container-low text-on-surface-variant hover:text-white rounded-lg border border-outline-variant/30 flex items-center justify-center opacity-40 hover:opacity-100 transition-all"><span class="material-symbols-outlined text-[1rem]">delete</span></button>
-                        `}
-                    </td>
-                </tr>
-            `;
-        }).join('');
     }
 
     function openPaymentModal(id, name, price) {
@@ -593,22 +610,36 @@
         closePaymentModal();
     }
 
-    function updateBookingStatus(id, newStatus, paymentMethod = null) {
-        let bkgs = JSON.parse(localStorage.getItem('barbearia_bookings') || '[]');
-        const idx = bkgs.findIndex(b => b.id === id);
-        if (idx !== -1) {
-            bkgs[idx].status = newStatus;
-            if (paymentMethod) bkgs[idx].paymentMethod = paymentMethod;
-            localStorage.setItem('barbearia_bookings', JSON.stringify(bkgs));
+    async function updateBookingStatus(id, newStatus, paymentMethod = null) {
+        try {
+            const updates = { status: newStatus };
+            if (paymentMethod) updates.payment_method = paymentMethod;
+            
+            const { error } = await supabase
+                .from('bookings')
+                .update(updates)
+                .eq('id', id);
+
+            if (error) throw error;
             loadBookings();
+        } catch (err) {
+            console.error('Erro ao atualizar status:', err);
         }
     }
 
-    function deleteBooking(id) {
+    async function deleteBooking(id) {
         if (!confirm('Excluir agendamento?')) return;
-        let bkgs = JSON.parse(localStorage.getItem('barbearia_bookings') || '[]');
-        localStorage.setItem('barbearia_bookings', JSON.stringify(bkgs.filter(b => b.id !== id)));
-        loadBookings();
+        try {
+            const { error } = await supabase
+                .from('bookings')
+                .delete()
+                .eq('id', id);
+
+            if (error) throw error;
+            loadBookings();
+        } catch (err) {
+            console.error('Erro ao excluir agendamento:', err);
+        }
     }
 
     function toggleSlot(dayIdx, slot, el) {
@@ -633,23 +664,33 @@
         }
     }
 
-    function loadAccounts() {
+    async function loadAccounts() {
         const tbody = document.getElementById('accounts-table-body');
-        const accounts = JSON.parse(localStorage.getItem('barbearia_accounts') || '[]');
-        if (accounts.length === 0) {
-            tbody.innerHTML = '<tr><td colspan="3" class="p-10 text-center italic opacity-40">Nenhum cliente cadastrado.</td></tr>';
-            return;
+        try {
+            const { data: accounts, error } = await supabase
+                .from('clients')
+                .select('*')
+                .order('name');
+
+            if (error) throw error;
+
+            if (!accounts || accounts.length === 0) {
+                tbody.innerHTML = '<tr><td colspan="3" class="p-10 text-center italic opacity-40">Nenhum cliente cadastrado.</td></tr>';
+                return;
+            }
+            tbody.innerHTML = accounts.map(a => `
+                <tr class="hover:bg-surface-container-low transition-colors">
+                    <td class="p-5 font-bold">${a.name}</td>
+                    <td class="p-5 text-on-surface-variant font-bold">${formatPhone(a.phone)}</td>
+                    <td class="p-5 text-on-surface-variant font-bold">${a.email || '-'}</td>
+                </tr>
+            `).join('');
+        } catch (err) {
+            console.error('Erro ao carregar clientes:', err);
         }
-        tbody.innerHTML = accounts.map(a => `
-            <tr class="hover:bg-surface-container-low transition-colors">
-                <td class="p-5 font-bold">${a.name}</td>
-                <td class="p-5 text-on-surface-variant font-bold">${formatPhone(a.phone)}</td>
-                <td class="p-5 text-on-surface-variant font-bold">${a.email || '-'}</td>
-            </tr>
-        `).join('');
     }
 
-    function saveConfig() {
+    async function saveConfig() {
         const barber = document.getElementById('config-barber-select').value;
         if (!barber) { alert('Erro: Nenhum profissional selecionado.'); return; }
 
@@ -661,77 +702,107 @@
             weeklyHours[i] = selected.join(', ');
         }
         
-        let settingsObj = JSON.parse(localStorage.getItem('barbearia_settings_v2') || '{}');
-        if (!settingsObj[barber]) settingsObj[barber] = {};
-        settingsObj[barber].weeklyHours = weeklyHours;
+        try {
+            const { error } = await supabase
+                .from('schedule_settings')
+                .upsert({ 
+                    barber_name: barber, 
+                    weekly_hours: weeklyHours 
+                }, { onConflict: 'barber_name' });
 
-        localStorage.setItem('barbearia_settings_v2', JSON.stringify(settingsObj));
-        alert(`Configurações de ${barber} salvas com sucesso!`);
+            if (error) throw error;
+            alert(`Configurações de ${barber} salvas com sucesso!`);
+        } catch (err) {
+            console.error('Erro ao salvar configurações:', err);
+            alert('Erro ao salvar configurações no banco de dados.');
+        }
     }
 
-    function removeBarber(idx) {
-        if (!confirm('Excluir este profissional?')) return;
-        const barbers = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
-        barbers.splice(idx, 1);
-        localStorage.setItem('barbearia_barbers', JSON.stringify(barbers));
-        document.getElementById('config-barber-select').innerHTML = ''; // Force refresh dropdown
-        loadBarbers();
-        initConfig();
+    async function removeBarber(name) {
+        if (!confirm(`Excluir o profissional ${name}?`)) return;
+        try {
+            const { error } = await supabase
+                .from('barbers')
+                .delete()
+                .eq('name', name);
+
+            if (error) throw error;
+            
+            // Also cleanup their schedule
+            await supabase.from('schedule_settings').delete().eq('barber_name', name);
+
+            document.getElementById('config-barber-select').innerHTML = ''; 
+            loadBarbers();
+            initConfig();
+        } catch (err) {
+            console.error('Erro ao excluir barbeiro:', err);
+        }
     }
 
-    function addBarber() {
+    async function addBarber() {
         const input = document.getElementById('new-barber-name');
         const name = input.value.trim();
         if (!name) return;
         
-        const barbers = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
-        if(!barbers.includes(name)) barbers.push(name);
-        
-        localStorage.setItem('barbearia_barbers', JSON.stringify(barbers));
-        input.value = '';
-        document.getElementById('config-barber-select').innerHTML = ''; // Force refresh dropdown
-        loadBarbers();
-        initConfig();
+        try {
+            const { error } = await supabase
+                .from('barbers')
+                .insert({ name });
+
+            if (error) throw error;
+
+            input.value = '';
+            document.getElementById('config-barber-select').innerHTML = ''; 
+            loadBarbers();
+            initConfig();
+        } catch (err) {
+            console.error('Erro ao adicionar barbeiro:', err);
+            alert('Erro ao adicionar barbeiro (pode ser que já exista).');
+        }
     }
 
-    function initConfig() {
+    async function initConfig() {
         const slots = ["08:00", "08:30", "09:00", "09:30", "10:00", "10:30", "11:00", "11:30", "12:00", "12:30", "13:00", "13:30", "14:00", "14:30", "15:00", "15:30", "16:00", "16:30", "17:00", "17:30", "18:00", "18:30", "19:00", "19:30", "20:00"];
         const dayNames = ["Domingo", "Segunda", "Terça", "Quarta", "Quinta", "Sexta", "Sábado"];
         
         const barberSelect = document.getElementById('config-barber-select');
-        const barbersList = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
         
-        // Always refresh options to keep in sync with "Barbeiros" tab
-        const currentVal = barberSelect.value;
-        barberSelect.innerHTML = '';
-        barbersList.filter(b => b !== 'Qualquer disponível').forEach(b => {
-            barberSelect.add(new Option(b, b));
-        });
-        if (currentVal && Array.from(barberSelect.options).some(o => o.value === currentVal)) {
-            barberSelect.value = currentVal;
-        }
+        try {
+            const barbersList = await SupabaseService.getBarbers();
+            
+            // Always refresh options to keep in sync with "Barbeiros" tab
+            const currentVal = barberSelect.value;
+            barberSelect.innerHTML = '';
+            barbersList.filter(b => b.name !== 'Qualquer disponível').forEach(b => {
+                barberSelect.add(new Option(b.name, b.name));
+            });
+            if (currentVal && Array.from(barberSelect.options).some(o => o.value === currentVal)) {
+                barberSelect.value = currentVal;
+            }
 
-        const barber = barberSelect.value;
-        if (!barber) {
-            document.getElementById('agenda-container').innerHTML = `
-                <div class="flex flex-col items-center justify-center p-20 opacity-50">
-                    <span class="material-symbols-outlined text-6xl mb-4">person_off</span>
-                    <p class="font-headline text-xl italic text-on-surface text-center">Nenhum profissional cadastrado ou selecionado.</p>
-                    <p class="text-xs uppercase tracking-widest mt-2">Vá na aba "Perfil Administrativo" para adicionar barbeiros.</p>
-                </div>
-            `;
-            return;
-        }
+            const barber = barberSelect.value;
+            if (!barber) {
+                document.getElementById('agenda-container').innerHTML = `
+                    <div class="flex flex-col items-center justify-center p-20 opacity-50">
+                        <span class="material-symbols-outlined text-6xl mb-4">person_off</span>
+                        <p class="font-headline text-xl italic text-on-surface text-center">Nenhum profissional cadastrado ou selecionado.</p>
+                        <p class="text-xs uppercase tracking-widest mt-2">Vá na aba "Perfil Administrativo" para adicionar barbeiros.</p>
+                    </div>
+                `;
+                return;
+            }
 
-        const settingsV2 = JSON.parse(localStorage.getItem('barbearia_settings_v2') || '{}');
-        const oldSettings = JSON.parse(localStorage.getItem('barbearia_settings') || 'null');
-        
-        const fallbackHours = oldSettings && oldSettings.weeklyHours ? oldSettings.weeklyHours : {};
-        const hrs = settingsV2[barber] && settingsV2[barber].weeklyHours ? settingsV2[barber].weeklyHours : fallbackHours;
+            const { data: scheduleData } = await supabase
+                .from('schedule_settings')
+                .select('weekly_hours')
+                .eq('barber_name', barber)
+                .single();
+            
+            const hrs = scheduleData?.weekly_hours || {};
 
-        document.getElementById('agenda-container').innerHTML = dayNames.map((name, i) => {
-            const currentSlots = (hrs[i] || "").split(',').map(s => s.trim());
-            const isOpen = currentSlots.length > 0 && currentSlots[0] !== "";
+            document.getElementById('agenda-container').innerHTML = dayNames.map((name, i) => {
+                const currentSlots = (hrs[i] || "").split(',').map(s => s.trim());
+                const isOpen = currentSlots.length > 0 && currentSlots[0] !== "";
 
             return `
                 <div class="bg-surface-container-low p-6 rounded-2xl border border-outline-variant/20">
@@ -753,21 +824,27 @@
         }).join('');
     }
 
-    function loadBarbers() {
+    async function loadBarbers() {
         const list = document.getElementById('barbers-list');
-        const barbers = JSON.parse(localStorage.getItem('barbearia_barbers') || '["Qualquer disponível","João","Marcos","Carlos"]');
-        
-        list.innerHTML = barbers.map((b, idx) => `
-            <div class="bg-surface-container-low border border-outline-variant/20 rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 transition-all">
-                <div class="flex items-center gap-3">
-                    <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
-                        <span class="material-symbols-outlined text-on-surface-variant opacity-60">person</span>
+        try {
+            const barbers = await SupabaseService.getBarbers();
+            
+            list.innerHTML = barbers.map((b) => `
+                <div class="bg-surface-container-low border border-outline-variant/20 rounded-xl p-4 flex items-center justify-between group hover:border-primary/30 transition-all">
+                    <div class="flex items-center gap-3">
+                        <div class="w-10 h-10 rounded-full bg-surface-container flex items-center justify-center">
+                            <span class="material-symbols-outlined text-on-surface-variant opacity-60">person</span>
+                        </div>
+                        <span class="font-bold text-sm">${b.name}</span>
                     </div>
-                    <span class="font-bold text-sm">${b}</span>
+                    ${b.name !== 'Qualquer disponível' ? `
+                        <button onclick="removeBarber('${b.name}')" class="text-red-500/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2 bg-red-500/10 rounded-lg"><span class="material-symbols-outlined text-[1rem] block">delete</span></button>
+                    ` : ''}
                 </div>
-                <button onclick="removeBarber(${idx})" class="text-red-500/50 hover:text-red-500 opacity-0 group-hover:opacity-100 transition-all p-2 bg-red-500/10 rounded-lg"><span class="material-symbols-outlined text-[1rem] block">delete</span></button>
-            </div>
-        `).join('');
+            `).join('');
+        } catch (err) {
+            console.error('Erro ao carregar barbeiros:', err);
+        }
     }
 
     refreshAllData();
@@ -775,6 +852,46 @@
     // --- PRODUCTS LOGIC ---
     let currentEditingProductId = null;
     let currentImageBase64 = null;
+
+    async function migrateProducts() {
+        const localData = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
+        if (localData.length === 0) {
+            alert('Não há produtos no LocalStorage para migrar.');
+            return;
+        }
+
+        if (!confirm(`Deseja migrar ${localData.length} produtos do seu navegador para o banco de dados Supabase?`)) return;
+
+        const btn = document.getElementById('btn-migrate-products');
+        btn.disabled = true;
+        btn.innerHTML = `<span class="animate-spin material-symbols-outlined text-sm">progress_activity</span> Migrando...`;
+
+        let success = 0;
+        let errors = 0;
+
+        for (const p of localData) {
+            try {
+                const pData = {
+                    name: p.name,
+                    price: parseFloat(p.price),
+                    description: p.description || '',
+                    stock: parseInt(p.stock) || 0,
+                    sold: parseInt(p.sold) || 0,
+                    image: p.image || null
+                };
+                await SupabaseService.addProduct(pData);
+                success++;
+            } catch (e) {
+                console.error('Erro ao migrar:', p.name, e);
+                errors++;
+            }
+        }
+
+        alert(`Migração concluída!\nSucesso: ${success}\nErros: ${errors}`);
+        btn.disabled = false;
+        btn.innerHTML = `<span class="material-symbols-outlined text-[1rem]">database_upload</span> Migrar Dados Antigos`;
+        loadProducts();
+    }
 
     function openProductModal(id = null) {
         currentEditingProductId = id;
@@ -784,8 +901,7 @@
         
         if (id) {
             document.getElementById('product-modal-title').innerText = "Editar Produto";
-            const products = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
-            const p = products.find(prod => prod.id === id);
+            const p = productsData.find(prod => prod.id === id);
             if (p) {
                 document.getElementById('p-name').value = p.name;
                 document.getElementById('p-price').value = p.price;
@@ -832,7 +948,7 @@
         }
     }
 
-    function saveProduct() {
+    async function saveProduct() {
         const name = document.getElementById('p-name').value.trim();
         const price = document.getElementById('p-price').value.trim();
         const description = document.getElementById('p-desc').value.trim();
@@ -843,135 +959,145 @@
             return;
         }
 
-        let products = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
-
-        const pData = {
-            id: currentEditingProductId || Date.now(),
+        const pDataView = {
             name,
-            price,
+            price: parseFloat(price),
             description,
-            stock,
-            sold: currentEditingProductId ? (products.find(p => p.id === currentEditingProductId)?.sold || 0) : 0,
+            stock: parseInt(stock),
+            sold: currentEditingProductId ? (productsData?.find(p => p.id === currentEditingProductId)?.sold || 0) : 0,
             image: currentImageBase64
         };
 
-        if (currentEditingProductId) {
-            const idx = products.findIndex(p => p.id === currentEditingProductId);
-            if (idx !== -1) products[idx] = pData;
-        } else {
-            products.push(pData);
+        try {
+            if (currentEditingProductId) {
+                await SupabaseService.updateProduct(currentEditingProductId, pDataView);
+            } else {
+                await SupabaseService.addProduct(pDataView);
+            }
+            closeProductModal();
+            loadProducts();
+            calculateDashboardStats();
+        } catch (err) {
+            console.error('Erro ao salvar produto:', err);
+            alert('Erro ao salvar no banco de dados.');
         }
-
-        localStorage.setItem('barbearia_products', JSON.stringify(products));
-        closeProductModal();
-        loadProducts();
-        calculateDashboardStats(); // Update dashboard metric
     }
 
-    function loadProducts() {
+    let productsData = [];
+    async function loadProducts() {
         const grid = document.getElementById('products-list-grid');
         const empty = document.getElementById('products-empty-state');
-        const products = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
-
-        if (products.length === 0) {
-            grid.innerHTML = '';
-            empty.classList.remove('hidden');
-            return;
-        }
-        empty.classList.add('hidden');
-
-        grid.innerHTML = products.map(p => {
-            const stock = p.stock || 0;
-            const sold = p.sold || 0;
+        
+        try {
+            productsData = await SupabaseService.getProducts();
             
-            let stockColor = 'text-green-500';
-            let stockBg = 'bg-green-500/10';
-            let stockLabel = 'Em Estoque';
-            
-            if (stock <= 0) {
-                stockColor = 'text-red-500';
-                stockBg = 'bg-red-500/10';
-                stockLabel = 'Esgotado';
-            } else if (stock <= 5) {
-                stockColor = 'text-yellow-500';
-                stockBg = 'bg-yellow-500/10';
-                stockLabel = 'Estoque Baixo';
-            }
-
-            return `
-                <div class="bg-surface-container-low border border-outline-variant/10 rounded-[2rem] overflow-hidden group hover:border-primary/40 transition-all duration-500 shadow-xl flex flex-col relative">
-                    <div class="aspect-square bg-[#080808] flex items-center justify-center relative overflow-hidden border-b border-white/5">
-                        <img src="${p.image || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000">
-                        <div class="absolute top-4 left-4">
-                            <span class="px-4 py-1.5 rounded-full border border-current text-[0.6rem] font-black uppercase tracking-widest ${stockBg} ${stockColor} backdrop-blur-md">${stockLabel}: ${stock}</span>
-                        </div>
-                        <div class="absolute top-4 right-4 flex gap-2">
-                            <button onclick="openProductModal(${p.id})" class="h-10 w-10 bg-black/60 backdrop-blur-md text-white hover:text-primary rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/10"><span class="material-symbols-outlined text-[1.2rem]">edit</span></button>
-                            <button onclick="deleteProduct(${p.id})" class="h-10 w-10 bg-black/60 backdrop-blur-md text-white hover:text-red-500 rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/10"><span class="material-symbols-outlined text-[1.2rem]">delete</span></button>
-                        </div>
-                    </div>
-                    <div class="p-6 flex-1 flex flex-col bg-[#0D0D0D]">
-                        <div class="mb-4">
-                            <h4 class="font-headline text-xl font-bold text-white mb-2">${p.name}</h4>
-                            <p class="text-xs text-white/60 line-clamp-2 h-8 leading-relaxed">${p.description}</p>
-                        </div>
-                        
-                        <div class="mt-auto pt-6 border-t border-white/5">
-                            <div class="flex justify-between items-center mb-6">
-                                <div>
-                                    <div class="text-[0.6rem] uppercase font-black tracking-widest text-white/30 mb-1">Vendidos</div>
-                                    <div class="text-lg font-headline font-bold text-white">${sold} UN</div>
-                                </div>
-                                <div class="text-right">
-                                    <div class="text-[0.6rem] uppercase font-black tracking-widest text-white/30 mb-1">Preço</div>
-                                    <div class="text-2xl font-headline font-black text-primary">R$ ${p.price}</div>
-                                </div>
-                            </div>
-                            
-                            <button onclick="registerSale(${p.id})" 
-                                ${stock <= 0 ? 'disabled' : ''}
-                                class="w-full py-4 rounded-2xl font-label font-black uppercase text-[0.7rem] tracking-[0.2rem] transition-all flex items-center justify-center gap-3 
-                                ${stock <= 0 ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'bg-primary text-black hover:bg-primary/90 shadow-xl shadow-primary/10 active:scale-95'}">
-                                <span class="material-symbols-outlined text-[1.2rem] font-black">add_shopping_cart</span>
-                                ${stock <= 0 ? 'Esgotado' : 'Registrar Venda'}
-                            </button>
-                        </div>
-                    </div>
-                </div>
-            `;
-        }).join('');
-    }
-
-    function registerSale(id) {
-        let products = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
-        const idx = products.findIndex(p => p.id === id);
-        if (idx !== -1) {
-            if ((products[idx].stock || 0) <= 0) {
-                alert('Produto sem estoque!');
+            if (!productsData || productsData.length === 0) {
+                grid.innerHTML = '';
+                empty.classList.remove('hidden');
                 return;
             }
-            products[idx].stock = (products[idx].stock || 0) - 1;
-            products[idx].sold = (products[idx].sold || 0) + 1;
-            
-            localStorage.setItem('barbearia_products', JSON.stringify(products));
+            empty.classList.add('hidden');
+
+            grid.innerHTML = productsData.map(p => {
+                const stock = p.stock || 0;
+                const sold = p.sold || 0;
+                
+                let stockColor = 'text-green-500';
+                let stockBg = 'bg-green-500/10';
+                let stockLabel = 'Em Estoque';
+                
+                if (stock <= 0) {
+                    stockColor = 'text-red-500';
+                    stockBg = 'bg-red-500/10';
+                    stockLabel = 'Esgotado';
+                } else if (stock <= 5) {
+                    stockColor = 'text-yellow-500';
+                    stockBg = 'bg-yellow-500/10';
+                    stockLabel = 'Estoque Baixo';
+                }
+
+                return `
+                    <div class="bg-surface-container-low border border-outline-variant/10 rounded-[2rem] overflow-hidden group hover:border-primary/40 transition-all duration-500 shadow-xl flex flex-col relative">
+                        <div class="aspect-square bg-[#080808] flex items-center justify-center relative overflow-hidden border-b border-white/5">
+                            <img src="${p.image || 'https://via.placeholder.com/400'}" class="w-full h-full object-cover group-hover:scale-105 transition-all duration-1000">
+                            <div class="absolute top-4 left-4">
+                                <span class="px-4 py-1.5 rounded-full border border-current text-[0.6rem] font-black uppercase tracking-widest ${stockBg} ${stockColor} backdrop-blur-md">${stockLabel}: ${stock}</span>
+                            </div>
+                            <div class="absolute top-4 right-4 flex gap-2">
+                                <button onclick="openProductModal('${p.id}')" class="h-10 w-10 bg-black/60 backdrop-blur-md text-white hover:text-primary rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/10"><span class="material-symbols-outlined text-[1.2rem]">edit</span></button>
+                                <button onclick="deleteProduct('${p.id}')" class="h-10 w-10 bg-black/60 backdrop-blur-md text-white hover:text-red-500 rounded-xl flex items-center justify-center transition-all shadow-lg border border-white/10"><span class="material-symbols-outlined text-[1.2rem]">delete</span></button>
+                            </div>
+                        </div>
+                        <div class="p-6 flex-1 flex flex-col bg-[#0D0D0D]">
+                            <div class="mb-4">
+                                <h4 class="font-headline text-xl font-bold text-white mb-2">${p.name}</h4>
+                                <p class="text-xs text-white/60 line-clamp-2 h-8 leading-relaxed">${p.description}</p>
+                            </div>
+                            
+                            <div class="mt-auto pt-6 border-t border-white/5">
+                                <div class="flex justify-between items-center mb-6">
+                                    <div>
+                                        <div class="text-[0.6rem] uppercase font-black tracking-widest text-white/30 mb-1">Vendidos</div>
+                                        <div class="text-lg font-headline font-bold text-white">${sold} UN</div>
+                                    </div>
+                                    <div class="text-right">
+                                        <div class="text-[0.6rem] uppercase font-black tracking-widest text-white/30 mb-1">Preço</div>
+                                        <div class="text-2xl font-headline font-black text-primary">R$ ${p.price}</div>
+                                    </div>
+                                </div>
+                                
+                                <button onclick="registerSale('${p.id}')" 
+                                    ${stock <= 0 ? 'disabled' : ''}
+                                    class="w-full py-4 rounded-2xl font-label font-black uppercase text-[0.7rem] tracking-[0.2rem] transition-all flex items-center justify-center gap-3 
+                                    ${stock <= 0 ? 'bg-white/5 text-white/20 cursor-not-allowed' : 'bg-primary text-black hover:bg-primary/90 shadow-xl shadow-primary/10 active:scale-95'}">
+                                    <span class="material-symbols-outlined text-[1.2rem] font-black">add_shopping_cart</span>
+                                    ${stock <= 0 ? 'Esgotado' : 'Registrar Venda'}
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error('Erro ao carregar produtos:', err);
+        }
+    }
+
+    async function registerSale(id) {
+        const p = productsData.find(item => item.id === id);
+        if (!p) return;
+
+        if (p.stock <= 0) {
+            alert('Produto sem estoque!');
+            return;
+        }
+
+        try {
+            await SupabaseService.updateProduct(id, {
+                stock: p.stock - 1,
+                sold: (p.sold || 0) + 1
+            });
             loadProducts();
             
-            // Optional: visual feedback
             const toast = document.createElement('div');
             toast.className = 'fixed bottom-8 right-8 bg-green-500 text-white px-6 py-3 rounded-xl shadow-2xl z-[200] animate-bounce font-bold text-xs uppercase tracking-widest';
             toast.innerText = 'Venda registrada com sucesso!';
             document.body.appendChild(toast);
             setTimeout(() => toast.remove(), 3000);
+        } catch (err) {
+            console.error('Erro ao registrar venda:', err);
         }
     }
 
-    function deleteProduct(id) {
+    async function deleteProduct(id) {
         if (!confirm('Deseja excluir este produto da vitrine?')) return;
-        let products = JSON.parse(localStorage.getItem('barbearia_products') || '[]');
-        products = products.filter(p => p.id !== id);
-        localStorage.setItem('barbearia_products', JSON.stringify(products));
-        loadProducts();
-        calculateDashboardStats(); // Update dashboard metric
+        try {
+            await SupabaseService.deleteProduct(id);
+            loadProducts();
+            calculateDashboardStats();
+        } catch (err) {
+            console.error('Erro ao deletar:', err);
+        }
     }
 </script>
 </body>
