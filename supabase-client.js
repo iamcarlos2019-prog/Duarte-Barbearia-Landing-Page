@@ -131,5 +131,46 @@ window.SupabaseService = {
         if (!client) throw new Error("Supabase não conectado");
         const { error } = await client.from('bookings').delete().eq('id', id);
         if (error) throw error;
+    },
+
+    // Configurações de Agenda
+    async getSchedule(barberId) {
+        if (!client) return null;
+        try {
+            const { data, error } = await client
+                .from('schedule_settings')
+                .select('*')
+                .eq('barber_id', barberId)
+                .single();
+            if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows"
+            return data;
+        } catch (e) {
+            console.error('[Supabase] Erro ao buscar agenda:', e);
+            return null;
+        }
+    },
+
+    async saveSchedule(barberId, slots) {
+        if (!client) throw new Error("Supabase não conectado");
+        
+        // Primeiro verificamos se já existe
+        const { data: existing } = await client
+            .from('schedule_settings')
+            .select('id')
+            .eq('barber_id', barberId)
+            .single();
+
+        if (existing) {
+            const { error } = await client
+                .from('schedule_settings')
+                .update({ weekly_hours: slots, updated_at: new Date() })
+                .eq('barber_id', barberId);
+            if (error) throw error;
+        } else {
+            const { error } = await client
+                .from('schedule_settings')
+                .insert([{ barber_id: barberId, weekly_hours: slots }]);
+            if (error) throw error;
+        }
     }
 };

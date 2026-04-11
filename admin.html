@@ -630,8 +630,17 @@
 
     async function loadBarbers() {
         const list = document.getElementById('barbers-list');
+        const select = document.getElementById('config-barber-select');
         try {
             barbersData = await SupabaseService.getBarbers();
+            
+            // Popula o select da Agenda Global
+            const currentVal = select ? select.value : '';
+            if (select) {
+                select.innerHTML = '<option value="">Escolha um profissional...</option>' + 
+                    barbersData.map(b => `<option value="${b.id}" ${currentVal === b.id ? 'selected' : ''}>${b.name}</option>`).join('');
+            }
+
             if (!barbersData || barbersData.length === 0) {
                 list.innerHTML = '<p class="col-span-full text-center opacity-30 py-10 italic">Nenhum barbeiro cadastrado.</p>';
                 return;
@@ -651,6 +660,128 @@
             `).join('');
         } catch (err) {
             console.error('Erro ao carregar barbeiros:', err);
+        }
+    }
+
+    async function initConfig() {
+        const select = document.getElementById('config-barber-select');
+        const container = document.getElementById('agenda-container');
+        if (!select || !container) return;
+        
+        const barberId = select.value;
+
+        if (!barberId) {
+            container.innerHTML = '<p class="text-center opacity-30 py-10 italic">Selecione um profissional acima para configurar a agenda.</p>';
+            return;
+        }
+
+        container.innerHTML = '<div class="flex justify-center p-10"><span class="animate-spin material-symbols-outlined text-primary">progress_activity</span></div>';
+
+        try {
+            const data = await SupabaseService.getSchedule(barberId);
+            const weeklyHours = data?.weekly_hours || {};
+
+            const dias = ['Domingo', 'Segunda', 'Terça', 'Quarta', 'Quinta', 'Sexta', 'Sábado'];
+            container.innerHTML = dias.map((dia, i) => {
+                const slots = weeklyHours[i] || "";
+                return `
+                    <div class="bg-surface-container-low border border-outline-variant/20 rounded-2xl p-6 group hover:border-primary/30 transition-all">
+                        <div class="flex items-center justify-between mb-4">
+                            <span class="text-[0.6rem] font-black uppercase tracking-[0.2rem] text-primary/70">${dia}</span>
+                            <span class="text-[0.5rem] text-on-surface-variant opacity-40 uppercase font-black">Separe por vírgula</span>
+                        </div>
+                        <input type="text" data-day="${i}" value="${slots}" placeholder="Ex: 09:00, 09:30, 10:00, 14:00..." class="schedule-input w-full bg-[#080808] border border-outline-variant/20 rounded-xl px-5 py-4 text-sm text-on-surface focus:border-primary outline-none transition-all shadow-inner">
+                    </div>
+                `;
+            }).join('');
+        } catch (err) {
+            console.error('Erro ao carregar agenda:', err);
+            container.innerHTML = '<p class="text-red-400 text-center py-10">Erro ao carregar horários.</p>';
+        }
+    }
+
+    async function saveConfig() {
+        const select = document.getElementById('config-barber-select');
+        const barberId = select ? select.value : '';
+        if (!barberId) {
+            alert('Selecione um profissional primeiro.');
+            return;
+        }
+
+        const inputs = document.querySelectorAll('.schedule-input');
+        const slots = {};
+        inputs.forEach(input => {
+            slots[input.dataset.day] = input.value;
+        });
+
+        try {
+            await SupabaseService.saveSchedule(barberId, slots);
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-8 right-8 bg-green-500 text-white px-8 py-4 rounded-xl shadow-2xl z-[200] font-bold text-xs uppercase tracking-widest';
+            toast.innerText = 'Agenda atualizada com sucesso!';
+            document.body.appendChild(toast);
+            setTimeout(() => toast.remove(), 3000);
+        } catch (err) {
+            console.error('Erro ao salvar:', err);
+            alert('Erro ao salvar configurações.');
+        }
+    }
+
+    async function refreshAllData() {
+        const btn = document.getElementById('btn-refresh');
+        const text = document.getElementById('refresh-text');
+        if (btn) btn.disabled = true;
+        if (text) text.innerText = 'Sincronizando...';
+
+        try {
+            await Promise.all([
+                loadBarbers(),
+                loadProducts(),
+                loadBookings(),
+                loadAccounts()
+            ]);
+        } catch (err) {
+            console.error('Erro na sincronização:', err);
+        } finally {
+            if (btn) btn.disabled = false;
+            if (text) text.innerText = 'Sincronizar Dados';
+        }
+    }
+
+    async function migrateProducts() {
+        const localData = localStorage.getItem('barbearia_produtos');
+        if (!localData) {
+            alert('Nenhum dado antigo encontrado no navegador para migrar.');
+            return;
+        }
+        if (!confirm('Deseja migrar todos os produtos cadastrados no navegador para o novo banco de dados (Supabase)?')) return;
+
+        const btn = document.getElementById('btn-migrate-products');
+        const originalText = btn.innerHTML;
+        btn.disabled = true;
+        btn.innerHTML = '<span class="animate-spin material-symbols-outlined text-[1rem]">progress_activity</span> Migrando...';
+
+        try {
+            const products = JSON.parse(localData);
+            for (const p of products) {
+                await SupabaseService.addProduct({
+                    name: p.nome,
+                    description: p.descricao,
+                    price: typeof p.preco === 'string' ? parseFloat(p.preco.replace(',', '.')) : p.preco,
+                    stock: parseInt(p.estoque) || 0,
+                    image: p.imagem || '',
+                    sold: 0
+                });
+            }
+            alert('Migração concluída com sucesso!');
+            localStorage.removeItem('barbearia_produtos'); // Limpar após sucesso
+            loadProducts();
+        } catch (err) {
+            console.error('Erro na migração:', err);
+            alert('Erro durante a migração. Verifique o console.');
+        } finally {
+            btn.disabled = false;
+            btn.innerHTML = originalText;
         }
     }
 
