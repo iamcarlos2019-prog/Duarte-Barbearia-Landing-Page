@@ -406,7 +406,17 @@
 </div>
 
 <script>
+    // Debug Tool: Captura qualquer erro de script e mostra na tela
+    window.onerror = function(msg, url, lineNo, columnNo, error) {
+        alert("ERRO ENCONTRADO:\n" + msg + "\nLinha: " + lineNo + "\nColuna: " + columnNo);
+        return false;
+    };
+    window.onunhandledrejection = function(event) {
+        alert("ERRO DE PROMESSA:\n" + event.reason);
+    };
+
     let activeBookingId = null;
+
     let productsData = [];
     let currentEditingProductId = null;
     let currentImageBase64 = null;

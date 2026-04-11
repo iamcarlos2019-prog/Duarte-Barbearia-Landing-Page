@@ -2,7 +2,11 @@ const SUPABASE_URL = 'https://gyvaiehurysccffpqkgv.supabase.co';
 const SUPABASE_KEY = 'sb_publishable_1bQSZQUuOsoe5aKfBeM5DA_UidCJaPa';
 
 // Capturar a biblioteca global antes de sobrescrever
+if (!window.supabase) {
+    alert("ERRO: Biblioteca Supabase não encontrada! Verifique sua conexão ou se o script da CDN está bloqueado.");
+}
 const supabaseLib = window.supabase;
+
 
 // Inicializar a conexão (Instância)
 const client = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
