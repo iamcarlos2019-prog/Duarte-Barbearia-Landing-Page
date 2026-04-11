@@ -368,7 +368,7 @@ function renderSummaryChips() {
         </div>`).join('');
 }
 
-function renderStep() {
+async function renderStep() {
     updateProgress();
     renderSummaryChips();
     const body = document.getElementById('step-body');

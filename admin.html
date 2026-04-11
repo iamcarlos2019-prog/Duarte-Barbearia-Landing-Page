@@ -436,8 +436,11 @@
         document.getElementById(`section-${tabId}`).classList.remove('hidden');
 
         // Tab specific actions
-        if(tabId === 'dashboard') {
+        if(tabId === 'dashboard' || tabId === 'bookings') {
             loadBookings();
+        }
+        if(tabId === 'accounts') {
+            loadAccounts();
         }
         if(tabId === 'settings') {
             document.getElementById('config-barber-select').innerHTML = ''; // Force refresh
