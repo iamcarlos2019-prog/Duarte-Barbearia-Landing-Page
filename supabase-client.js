@@ -4,18 +4,24 @@ const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZ
 // Inicialização segura para não quebrar a página se a CDN falhar
 let client = null;
 
-try {
-    if (window.supabase && typeof window.supabase.createClient === 'function') {
-        const supabaseLib = window.supabase;
-        client = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
-        // Exportar a instância para um nome exclusivo para evitar conflito com a biblioteca
-        window.supabaseClient = client; 
-    } else {
-        console.warn('[Supabase] Biblioteca não encontrada ou ainda não carregada.');
+function getSupabaseClient() {
+    if (client) return client;
+    try {
+        if (window.supabase && typeof window.supabase.createClient === 'function') {
+            client = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+            window.supabaseClient = client;
+            return client;
+        } else {
+            console.warn('[Supabase] Biblioteca não encontrada ou ainda não carregada.');
+        }
+    } catch (err) {
+        console.error('[Supabase] Erro na inicialização:', err);
     }
-} catch (err) {
-    console.error('[Supabase] Erro na inicialização:', err);
+    return null;
 }
+
+// Inicialização imediata
+getSupabaseClient();
 
 window.SupabaseService = {
     // Helper para verificar se a conexão está ativa
@@ -23,6 +29,7 @@ window.SupabaseService = {
 
     // Produtos
     async getProducts() {
+        const client = getSupabaseClient();
         if (!client) return [];
         try {
             const { data, error } = await client
@@ -38,6 +45,7 @@ window.SupabaseService = {
     },
     
     async addProduct(product) {
+        const client = getSupabaseClient();
         if (!client) throw new Error("Supabase não conectado");
         const { data, error } = await client.from('products').insert([product]).select();
         if (error) throw error;
@@ -59,6 +67,7 @@ window.SupabaseService = {
 
     // Barbeiros
     async getBarbers() {
+        const client = getSupabaseClient();
         if (!client) return [];
         try {
             const { data, error } = await client.from('barbers').select('*');
@@ -85,6 +94,7 @@ window.SupabaseService = {
 
     // Clientes
     async getClients() {
+        const client = getSupabaseClient();
         if (!client) return [];
         try {
             const { data, error } = await client.from('clients').select('*').order('name', { ascending: true });
@@ -98,6 +108,7 @@ window.SupabaseService = {
 
     // Agendamentos
     async getBookings() {
+        const client = getSupabaseClient();
         if (!client) return [];
         try {
             const { data, error } = await client
@@ -135,6 +146,7 @@ window.SupabaseService = {
 
     // Configurações de Agenda
     async getSchedule(barberId) {
+        const client = getSupabaseClient();
         if (!client) return null;
         try {
             const { data, error } = await client

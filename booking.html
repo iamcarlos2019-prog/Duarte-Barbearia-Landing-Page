@@ -209,14 +209,37 @@ function toggleService(name, price) {
     renderStep();
 }
 
+function safeGet(key, def = null) {
+    try {
+        const val = localStorage.getItem(key);
+        return val ? JSON.parse(val) : def;
+    } catch(e) {
+        console.warn('Storage warn:', e);
+        return def;
+    }
+}
+
+function safeSet(key, val) {
+    try {
+        localStorage.setItem(key, JSON.stringify(val));
+    } catch(e) {
+        console.warn('Storage warn:', e);
+    }
+}
+
 async function init() {
-    const logged = localStorage.getItem('barbearia_logged_in');
-    if (logged) {
-        const u = JSON.parse(logged);
-        data.name = u.name; data.phone = u.phone;
-        document.getElementById('nav-username').textContent = u.name.split(' ')[0];
-        showFlow();
-    } else {
+    try {
+        const u = safeGet('barbearia_logged_in', null);
+        if (u && u.name) {
+            data.name = u.name; data.phone = u.phone;
+            const navUserName = document.getElementById('nav-username');
+            if(navUserName) navUserName.textContent = u.name.split(' ')[0];
+            showFlow();
+        } else {
+            document.getElementById('auth-gate').classList.remove('hidden');
+        }
+    } catch(err) {
+        console.error("Init err:", err);
         document.getElementById('auth-gate').classList.remove('hidden');
     }
     renderSidebar();
@@ -321,7 +344,7 @@ async function submitGate() {
                 err.classList.remove('hidden');
                 return;
             }
-            localStorage.setItem('barbearia_logged_in', JSON.stringify(u));
+            safeSet('barbearia_logged_in', u);
             data.name=u.name; data.phone=u.phone;
         } else {
             // Check if exists
@@ -340,7 +363,7 @@ async function submitGate() {
 
             if (error || !nu) throw error;
 
-            localStorage.setItem('barbearia_logged_in', JSON.stringify(nu));
+            safeSet('barbearia_logged_in', nu);
             data.name=name; data.phone=phone;
         }
         showFlow();
