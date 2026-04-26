@@ -1,5 +1,5 @@
 const SUPABASE_URL = 'https://gyvaiehurysccffpqkgv.supabase.co';
-const SUPABASE_KEY = 'sb_publishable_1bQSZQUuOsoe5aKfBeM5DA_UidCJaPa';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Imd5dmFpZWh1cnlzY2NmZnBxa2d2Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NzUyNjU0NDEsImV4cCI6MjA5MDg0MTQ0MX0.o1a7IhuhFTicemk200WLzlosuDBQQVAqQACAx_7-WUU';
 
 // Inicialização segura para não quebrar a página se a CDN falhar
 let client = null;
