@@ -8,8 +8,8 @@ try {
     if (window.supabase && typeof window.supabase.createClient === 'function') {
         const supabaseLib = window.supabase;
         client = supabaseLib.createClient(SUPABASE_URL, SUPABASE_KEY);
-        // Exportar a instância para uso global
-        window.supabase = client; 
+        // Exportar a instância para um nome exclusivo para evitar conflito com a biblioteca
+        window.supabaseClient = client; 
     } else {
         console.warn('[Supabase] Biblioteca não encontrada ou ainda não carregada.');
     }
@@ -61,7 +61,7 @@ window.SupabaseService = {
     async getBarbers() {
         if (!client) return [];
         try {
-            const { data, error } = await client.from('barbers').select('*').eq('active', true);
+            const { data, error } = await client.from('barbers').select('*');
             if (error) throw error;
             return data;
         } catch (e) {
@@ -103,8 +103,8 @@ window.SupabaseService = {
             const { data, error } = await client
                 .from('bookings')
                 .select('*')
-                .order('booking_date', { ascending: true })
-                .order('booking_time', { ascending: true });
+                .order('date', { ascending: true })
+                .order('time', { ascending: true });
             if (error) throw error;
             return data;
         } catch (e) {
@@ -141,8 +141,8 @@ window.SupabaseService = {
                 .from('schedule_settings')
                 .select('*')
                 .eq('barber_id', barberId)
-                .single();
-            if (error && error.code !== 'PGRST116') throw error; // PGRST116 is "no rows"
+                .maybeSingle();
+            if (error) throw error;
             return data;
         } catch (e) {
             console.error('[Supabase] Erro ao buscar agenda:', e);
@@ -153,12 +153,11 @@ window.SupabaseService = {
     async saveSchedule(barberId, slots) {
         if (!client) throw new Error("Supabase não conectado");
         
-        // Primeiro verificamos se já existe
         const { data: existing } = await client
             .from('schedule_settings')
             .select('id')
             .eq('barber_id', barberId)
-            .single();
+            .maybeSingle();
 
         if (existing) {
             const { error } = await client

@@ -120,7 +120,7 @@
         </div>
     </div>
     <!-- Mobile Menu -->
-    <div id="mobile-menu" class="hidden md:hidden border-t border-primary/20 bg-black px-5 py-6 flex-col gap-6 w-full absolute left-0 top-full z-40 border-b shadow-2xl items-end">
+        <div id="mobile-menu" class="hidden md:hidden border-t border-primary/20 bg-black px-5 py-6 flex-col gap-6 w-full absolute left-0 top-full z-40 border-b shadow-2xl items-end">
         <a class="text-white/80 uppercase tracking-widest text-xs hover:text-primary transition-all active:scale-95 duration-300 font-bold text-right" href="#servicos" onclick="closeMobileMenu()">Serviços</a>
         <a class="text-white/80 uppercase tracking-widest text-xs hover:text-primary transition-all active:scale-95 duration-300 font-bold text-right" href="#produtos" onclick="closeMobileMenu()">Produtos</a>
         <a class="text-white/80 uppercase tracking-widest text-xs hover:text-primary transition-all active:scale-95 duration-300 font-bold text-right" href="https://maps.google.com/?q=Rua+Itupeva,+2,+Cidade+Nova+I,+Itu,+SP" target="_blank" rel="noopener" onclick="closeMobileMenu()">Localização</a>
@@ -142,7 +142,7 @@
                 Duarte Barbearia <br/><span class="text-[0.45em] tracking-[0.45em] font-light block mt-4 font-body text-primary/75">Onde seu estilo é renovado</span>
             </h1>
             <div class="flex flex-col md:flex-row gap-6 justify-center items-center" data-aos="fade-up" data-aos-delay="400">
-                <button onclick="authCheck()" class="btn-gradient text-on-primary font-label font-extrabold uppercase text-[0.8rem] px-14 py-5 rounded-2xl tracking-[0.25rem] transition-transform hover:scale-105 active:scale-95 shadow-2xl">
+                <button onclick="window.open('booking.html','_blank')" class="btn-gradient text-on-primary font-label font-extrabold uppercase text-[0.8rem] px-14 py-5 rounded-2xl tracking-[0.25rem] transition-transform hover:scale-105 active:scale-95 shadow-2xl">
                     Agendar Agora
                 </button>
             </div>
@@ -250,7 +250,7 @@
                                 <span class="font-bold text-primary font-headline text-2xl">R$ 80</span>
                             </li>
                         </ul>
-                        <button onclick="authCheck()" class="w-full bg-primary/5 hover:bg-primary text-primary hover:text-on-primary py-5 rounded-2xl text-[0.65rem] font-black uppercase tracking-[0.3rem] border border-primary/20 transition-all">Ver todos e agendar</button>
+                        <button onclick="window.open('booking.html','_blank')" class="w-full bg-primary/5 hover:bg-primary text-primary hover:text-on-primary py-5 rounded-2xl text-[0.65rem] font-black uppercase tracking-[0.3rem] border border-primary/20 transition-all">Ver todos e agendar</button>
                     </div>
                 </div>
             </div>
@@ -361,7 +361,7 @@
 
             <!-- CTA -->
             <div class="mt-10 flex items-center justify-center">
-                <button onclick="authCheck()" class="flex items-center gap-3 bg-primary/5 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-on-primary px-8 py-3.5 rounded-2xl text-[0.6rem] font-black uppercase tracking-[0.3rem] transition-all duration-300 group">
+                <button onclick="window.open('booking.html','_blank')" class="flex items-center gap-3 bg-primary/5 hover:bg-primary border border-primary/20 hover:border-primary text-primary hover:text-on-primary px-8 py-3.5 rounded-2xl text-[0.6rem] font-black uppercase tracking-[0.3rem] transition-all duration-300 group">
                     <span class="material-symbols-outlined text-base group-hover:rotate-12 transition-transform">calendar_month</span>
                     Agendar Meu Corte
                 </button>
@@ -528,7 +528,7 @@
                 <a href="#produtos" onclick="document.getElementById('produtos').scrollIntoView({behavior:'smooth'})" class="text-white/50 hover:text-primary text-sm font-medium transition-colors duration-200 flex items-center gap-2 group">
                     <span class="w-4 h-px bg-primary/0 group-hover:bg-primary/60 group-hover:w-6 transition-all duration-300"></span>Produtos
                 </a>
-                <button onclick="authCheck()" class="text-white/50 hover:text-primary text-sm font-medium transition-colors duration-200 flex items-center gap-2 group text-left">
+                <button onclick="window.open('booking.html','_blank')" class="text-white/50 hover:text-primary text-sm font-medium transition-colors duration-200 flex items-center gap-2 group text-left">
                     <span class="w-4 h-px bg-primary/0 group-hover:bg-primary/60 group-hover:w-6 transition-all duration-300"></span>Agendamento
                 </button>
                 <button onclick="document.getElementById('contato').scrollIntoView({behavior:'smooth'})" class="text-white/50 hover:text-primary text-sm font-medium transition-colors duration-200 flex items-center gap-2 group text-left">
@@ -702,29 +702,31 @@
     let currentStep = 1;
     let bookingData = { barber: '', service: '', price: '', date: '', time: '', name: '', phone: '', notes: '' };
 
-    // Initial Load
-    refreshAuthUI();
+    // Standardized Auth Redirects — handled by authCheck() below
 
     function refreshAuthUI() {
         const logged = localStorage.getItem('barbearia_logged_in');
         const container = document.getElementById('navbar-auth-container');
         if (!container) return;
+
         if (logged) {
             const user = JSON.parse(logged);
             container.innerHTML = `
-                <div class="flex items-center gap-2 md:gap-3">
-                    <button onclick="window.open('client.html','_blank')" class="flex items-center gap-1.5 md:gap-2 bg-surface-container border border-primary/20 text-on-surface px-3 py-2 md:px-5 md:py-2.5 rounded-xl md:rounded-2xl hover:border-primary transition-all shadow-lg shadow-black/20">
-                        <span class="material-symbols-outlined text-primary text-sm md:text-base">account_circle</span>
-                        <span class="hidden md:inline-block text-[0.6rem] font-bold font-label uppercase tracking-[0.2rem]">Meu Perfil</span>
-                    </button>
-                </div>`;
+                <button onclick="window.open('client.html','_blank')" class="flex items-center gap-2.5 px-3 py-1.5 rounded-lg hover:bg-primary/5 transition-all group">
+                    <div class="w-7 h-7 bg-primary text-black rounded-full flex items-center justify-center font-bold text-[0.6rem]">${user.name.charAt(0)}</div>
+                    <span class="text-[0.65rem] font-black uppercase tracking-widest text-primary hidden sm:block">Perfil</span>
+                </button>`;
         } else {
             container.innerHTML = `
-                <button onclick="window.open('booking.html','_blank')" class="btn-gradient text-on-primary font-label font-extrabold uppercase text-[0.55rem] md:text-[0.6rem] px-5 py-2 md:px-8 md:py-3 rounded-xl md:rounded-2xl tracking-[0.1rem] md:tracking-[0.2rem] shadow-xl hover:scale-105 active:scale-95 transition-all">
+                <button onclick="window.open('booking.html','_blank')" class="btn-gradient text-on-primary font-black uppercase text-[0.6rem] px-5 py-2.5 rounded-xl tracking-widest transition-all hover:scale-105 active:scale-95 shadow-lg shadow-primary/20">
                     Agendar <span class="hidden sm:inline">Agora</span>
                 </button>`;
         }
     }
+
+    window.addEventListener('DOMContentLoaded', () => {
+        refreshAuthUI();
+    });
 
     // Navigation to new pages
     function toggleMobileMenu() {
@@ -741,6 +743,10 @@
 
     function authCheck() {
         window.open('booking.html', '_blank');
+    }
+
+    function openClientArea() {
+        window.open('client.html', '_blank');
     }
 
     function openClientArea() {
