@@ -589,39 +589,45 @@ async function confirmBooking() {
 
         if (error) throw error;
 
-    document.getElementById('progress-bar').style.width = '100%';
-    document.getElementById('progress-label').textContent = 'Agendamento confirmado!';
-    document.getElementById('progress-step-name').textContent = '✓';
+        document.getElementById('progress-bar').style.width = '100%';
+        document.getElementById('progress-label').textContent = 'Agendamento confirmado!';
+        document.getElementById('progress-step-name').textContent = '✓';
 
-    document.getElementById('step-body').innerHTML = `
-        <div class="py-12 flex flex-col items-center gap-6 text-center fade-in">
-            <div class="relative">
-                <div class="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.15)]">
-                    <span class="material-symbols-outlined text-5xl text-emerald-400">verified</span>
+        document.getElementById('step-body').innerHTML = `
+            <div class="py-12 flex flex-col items-center gap-6 text-center fade-in">
+                <div class="relative">
+                    <div class="w-24 h-24 rounded-full bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center shadow-[0_0_50px_rgba(16,185,129,0.15)]">
+                        <span class="material-symbols-outlined text-5xl text-emerald-400">verified</span>
+                    </div>
+                    <div class="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
+                        <span class="material-symbols-outlined text-white text-xs">check</span>
+                    </div>
                 </div>
-                <div class="absolute -top-1 -right-1 w-6 h-6 bg-emerald-500 rounded-full flex items-center justify-center">
-                    <span class="material-symbols-outlined text-white text-xs">check</span>
+                <div>
+                    <h3 class="headline text-3xl font-bold text-white mb-2">Reservado com sucesso!</h3>
+                    <p class="text-white/40 text-sm leading-relaxed max-w-xs mx-auto">
+                        Até breve, <strong class="text-white">${data.name.split(' ')[0]}</strong>.<br>
+                        Dia <strong class="text-white">${data.date.split('-').reverse().join('/')}</strong> às <strong class="text-primary">${data.time}</strong>.
+                    </p>
                 </div>
-            </div>
-            <div>
-                <h3 class="headline text-3xl font-bold text-white mb-2">Reservado com sucesso!</h3>
-                <p class="text-white/40 text-sm leading-relaxed max-w-xs mx-auto">
-                    Até breve, <strong class="text-white">${data.name.split(' ')[0]}</strong>.<br>
-                    Dia <strong class="text-white">${data.date.split('-').reverse().join('/')}</strong> às <strong class="text-primary">${data.time}</strong>.
-                </p>
-            </div>
-            <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
-                <a href="client" class="flex-1 btn-gold text-[#412d00] font-extrabold uppercase text-xs tracking-[0.2rem] py-4 rounded-2xl text-center hover:brightness-110 hover:scale-105 transition-all shadow-xl">
-                    Ver Painel
-                </a>
-                <a href="index" class="flex-1 border border-white/[0.08] text-white/30 font-bold uppercase text-xs tracking-[0.2rem] py-4 rounded-2xl text-center hover:border-white/20 hover:text-white transition-all">
-                    Início
-                </a>
-            </div>
-        </div>`;
-    document.getElementById('btn-next').classList.add('hidden');
-    document.getElementById('btn-back').classList.add('hidden');
-    document.getElementById('summary-chips').innerHTML = '';
+                <div class="flex flex-col sm:flex-row gap-3 w-full max-w-xs">
+                    <a href="client" class="flex-1 btn-gold text-[#412d00] font-extrabold uppercase text-xs tracking-[0.2rem] py-4 rounded-2xl text-center hover:brightness-110 hover:scale-105 transition-all shadow-xl">
+                        Ver Painel
+                    </a>
+                    <a href="index" class="flex-1 border border-white/[0.08] text-white/30 font-bold uppercase text-xs tracking-[0.2rem] py-4 rounded-2xl text-center hover:border-white/20 hover:text-white transition-all">
+                        Início
+                    </a>
+                </div>
+            </div>`;
+        document.getElementById('btn-next').classList.add('hidden');
+        document.getElementById('btn-back').classList.add('hidden');
+        document.getElementById('summary-chips').innerHTML = '';
+    } catch (e) {
+        console.error('Erro ao confirmar agendamento:', e);
+        btn.disabled = false;
+        btn.innerHTML = 'Confirmar Reserva <span class="material-symbols-outlined text-sm">check</span>';
+        alert('Erro ao confirmar agendamento. Verifique a conexão e tente novamente.');
+    }
 }
 
 init();
