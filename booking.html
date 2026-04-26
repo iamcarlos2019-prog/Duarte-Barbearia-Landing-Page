@@ -224,7 +224,6 @@ async function init() {
 
 async function getBarberSchedule(barberName) {
     if (!barberName || barberName === 'Qualquer disponível') {
-        const barbersList = await SupabaseService.getBarbers();
         const { data: schedules } = await window.supabaseClient.from('schedule_settings').select('weekly_hours');
         
         let unionHrs = {};
@@ -244,14 +243,24 @@ async function getBarberSchedule(barberName) {
     }
     
     try {
+        // Busca o barbeiro pelo nome para obter o ID
+        const { data: barber } = await window.supabaseClient
+            .from('barbers')
+            .select('id')
+            .eq('name', barberName)
+            .maybeSingle();
+        
+        if (!barber) return {};
+        
         const { data: schedule } = await window.supabaseClient
             .from('schedule_settings')
             .select('weekly_hours')
-            .eq('barber_name', barberName)
-            .single();
+            .eq('barber_id', barber.id)
+            .maybeSingle();
         
         return schedule?.weekly_hours || {};
     } catch (e) {
+        console.error('Erro ao buscar agenda do barbeiro:', e);
         return {};
     }
 }
@@ -568,8 +577,8 @@ async function confirmBooking() {
         const { error } = await window.supabaseClient
             .from('bookings')
             .insert({
-                booking_date: data.date,
-                booking_time: data.time,
+                date: data.date,
+                time: data.time,
                 barber: data.barber,
                 service: data.service,
                 price: data.price,
